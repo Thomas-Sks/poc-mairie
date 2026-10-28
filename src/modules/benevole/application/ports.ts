@@ -4,8 +4,9 @@
  *
  * RG-07 (minimisation) : les modèles de lecture ne portent QUE les champs listés en E10-US4/US5.
  */
+import type { Contexte } from "@/shared/application/contexte";
 import type { Besoin, Civilite, NiveauPriorite, Relation, StatutCible, TypeCampagne } from "@/shared/domain/vocabulaire";
-import type { ResultatAppel, ResultatProche } from "../domain/issue-appel";
+import type { ResultatAppel, ResultatProche } from "../domain/resultats";
 import type { Reponses } from "../domain/questions";
 import type { ScriptAppel } from "../domain/script";
 
@@ -56,22 +57,17 @@ export interface LectureBenevole {
   engagementAccepteLe(benevoleId: string): Promise<Date | null>;
 }
 
-export type Appelant = { id: string; prenom: string; nom: string };
-
 type CommandeBase = {
   /** Identifiant généré par le navigateur : rend l'envoi rejouable sans doublon (file hors connexion). */
   idOperation: string;
-  communeId: string;
-  appelant: Appelant;
   cibleId: string;
-  maintenant: Date;
 };
 
 export type CommandeResultat = CommandeBase & {
   resultat: ResultatAppel;
   reponses: Reponses;
   besoins: Besoin[];
-  /** Tags à ajouter à la personne (ex. « isolement »). */
+  /** Tags à ajouter à la personne (ex. « isolement »), déduits des réponses au script. */
   tags: string[];
   note: string | null;
   /** Précision en une phrase (danger) ou sur le besoin. */
@@ -90,19 +86,21 @@ export type IssueEnregistrement = {
 };
 
 /**
- * Port d'écriture des appels. Point de branchement prévu avec le module « crise »
- * (enregistrer-resultat-appel) : RG-04 relances, escalade cercle, notifications.
+ * Port d'écriture des appels. L'adaptateur délègue verrou et résultats aux cas d'usage du module Crise
+ * (cycle de vie de la cible : RG-04 relances, escalade cercle, notifications) et ajoute ce qui est propre
+ * au bénévole : idempotence des renvois hors connexion, tags issus du script, demandes, « rendre ma liste ».
+ * Le contrôle RG-07 est fait AVANT, par les cas d'usage du bénévole.
  */
 export interface JournalAppels {
   /** Prend le verrou d'appel (E8-US7) ; false si quelqu'un d'autre appelle déjà. */
-  prendreVerrou(communeId: string, cibleId: string, appelantId: string, maintenant: Date): Promise<boolean>;
-  libererVerrou(communeId: string, cibleId: string, appelantId: string): Promise<void>;
-  enregistrerResultat(commande: CommandeResultat): Promise<IssueEnregistrement>;
-  enregistrerResultatProche(commande: CommandeProche): Promise<IssueEnregistrement>;
+  prendreVerrou(ctx: Contexte, cibleId: string): Promise<boolean>;
+  libererVerrou(ctx: Contexte, cibleId: string): Promise<void>;
+  enregistrerResultat(ctx: Contexte, commande: CommandeResultat): Promise<IssueEnregistrement>;
+  enregistrerResultatProche(ctx: Contexte, commande: CommandeProche): Promise<IssueEnregistrement>;
   /** « Besoin d'une visite à domicile » / « Demande d'info sur des services seniors ». */
-  creerDemande(commande: CommandeDemande): Promise<void>;
-  /** E10-US9 : rend les personnes pas encore traitées ; renvoie leur nombre. */
-  rendreListe(communeId: string, benevoleId: string, jour: string): Promise<number>;
+  creerDemande(ctx: Contexte, commande: CommandeDemande): Promise<void>;
+  /** E10-US9 : rend les personnes pas encore traitées de la vague `jour` ; renvoie leur nombre. */
+  rendreListe(ctx: Contexte, jour: string): Promise<number>;
 }
 
 export interface Engagements {

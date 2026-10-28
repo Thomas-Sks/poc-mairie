@@ -391,6 +391,7 @@ export const depotCriseDrizzle: DepotCrise = {
       vagueDate: l.cible.vagueDate,
       statut: l.cible.statut,
       nbTentatives: l.cible.nbTentatives,
+      prochaineTentativeAt: l.cible.prochaineTentativeAt,
       rangCercleEssaye: l.cible.rangCercleEssaye,
       assigneA: l.cible.assigneA,
       verrouPar: l.cible.verrouPar,
@@ -467,12 +468,8 @@ export const depotCriseDrizzle: DepotCrise = {
     return ligne.id;
   },
 
-  async creerNotifications(communeId, notifications) {
-    if (notifications.length) await db.insert(s.notifications).values(notifications.map((n) => ({ communeId, ...n })));
-  },
-
   async creerRappel(communeId, r) {
-    await db.insert(s.rappels).values({ communeId, type: "besoin", ...r });
+    await db.insert(s.rappels).values({ communeId, ...r });
   },
 
   // ─── Rapport et maquettes IA ───────────────────────────────────────────────

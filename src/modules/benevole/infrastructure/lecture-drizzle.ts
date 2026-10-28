@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, eq, isNotNull, or } from "drizzle-orm";
 import { verrouActif } from "@/shared/domain/campagne";
 import { calculerAge } from "@/shared/domain/dates";
 import { db } from "@/shared/infrastructure/db/client";
@@ -90,10 +90,18 @@ export const lectureBenevoleDrizzle: LectureBenevole = {
         prenom: contacts.prenom,
         nom: contacts.nom,
         telephone: contacts.telephone,
+        telephone2: contacts.telephone2,
       })
       .from(liensCercle)
       .innerJoin(contacts, eq(contacts.id, liensCercle.contactId))
-      .where(and(eq(liensCercle.beneficiaireId, l.beneficiaireId), eq(contacts.communeId, communeId), isNotNull(contacts.telephone)))
+      // Même cercle « joignable » que le module Crise (rang et fin du cercle calculés sur la même base).
+      .where(
+        and(
+          eq(liensCercle.beneficiaireId, l.beneficiaireId),
+          eq(contacts.communeId, communeId),
+          or(isNotNull(contacts.telephone), isNotNull(contacts.telephone2)),
+        ),
+      )
       .orderBy(asc(liensCercle.rangAppel));
 
     const telephones = [
@@ -118,13 +126,13 @@ export const lectureBenevoleDrizzle: LectureBenevole = {
       nbTentatives: l.nbTentatives,
       rangCercleEssaye: l.rangCercleEssaye,
       verrouilleParAutre: verrouilleParAutre(l.verrouPar, l.verrouAt, benevoleId, maintenant),
-      cercle: cercle.map((p) => ({
+      cercle: cercle.map((p, i) => ({
         lienId: p.lienId,
-        rang: p.rang,
+        rang: i + 1,
         relation: p.relation,
         // RG-07 : prénom seul ; à défaut, le nom (contact professionnel ou structure).
         prenom: p.prenom ?? p.nom,
-        telephone: p.telephone!,
+        telephone: (p.telephone ?? p.telephone2)!,
       })),
     };
   },

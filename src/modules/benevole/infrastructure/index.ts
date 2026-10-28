@@ -20,8 +20,8 @@ const engagementsDrizzle: Engagements = {
 };
 
 /**
- * Assemblage des cas d'usage. Pour brancher le module « crise » à la fusion, il suffit de remplacer
- * `journalAppelsDrizzle` par un adaptateur du port `JournalAppels` qui délègue à son cas d'usage.
+ * Assemblage des cas d'usage. `journalAppelsDrizzle` délègue verrou et résultats aux cas d'usage
+ * du module Crise (`casDUsageCrise`), seule source de vérité du cycle de vie d'une cible.
  */
 const deps = { lecture: lectureBenevoleDrizzle, journal: journalAppelsDrizzle, engagements: engagementsDrizzle };
 

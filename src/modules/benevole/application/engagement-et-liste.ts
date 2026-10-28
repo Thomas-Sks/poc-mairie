@@ -12,5 +12,5 @@ export async function accepterEngagement(deps: { engagements: Engagements }, ctx
 /** E10-US9 « Je n'ai plus de temps » : les personnes non traitées retournent dans le pot commun. */
 export async function rendreMaListe(deps: { lecture: LectureBenevole; journal: JournalAppels }, ctx: Contexte): Promise<number> {
   await exigerBenevole(deps.lecture, ctx);
-  return deps.journal.rendreListe(ctx.commune.id, ctx.utilisateur.id, jourDe(ctx));
+  return deps.journal.rendreListe(ctx, jourDe(ctx));
 }

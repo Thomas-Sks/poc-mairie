@@ -26,9 +26,9 @@ import {
 import { calculerStatistiques, STATUTS_SIGNALES } from "../domain/rapport";
 import { versCsv } from "../domain/export-csv";
 import { decrireFiltre, filtreGeographiqueSchema } from "../domain/filtre-geographique";
-import type { Campagne, CibleTableau, DepotCrise, SelecteurBeneficiaires, SourceCampagne } from "./ports";
+import type { Campagne, CibleTableau, DepotCrise, Notifieur, SelecteurBeneficiaires, SourceCampagne } from "./ports";
 
-type Deps = { depot: DepotCrise; selecteur: SelecteurBeneficiaires };
+type Deps = { depot: DepotCrise; selecteur: SelecteurBeneficiaires; notifier: Notifieur };
 
 const nomComplet = (c: { civilite: string; prenom: string; nom: string }) => `${c.civilite} ${c.prenom} ${c.nom}`;
 
@@ -163,17 +163,13 @@ async function assurerVague(deps: Deps, ctx: Contexte, campagne: Campagne, jour:
   // RG-06 : toute escalade crée une notification.
   const escalades = ia.filter((c) => c.generee.statut === "escalade_humain");
   if (escalades.length) {
-    const equipeCcas = await deps.depot.listerMembres(ctx.commune.id, ["admin", "agent"]);
-    await deps.depot.creerNotifications(
-      ctx.commune.id,
-      equipeCcas.map((m) => ({
-        destinataireId: m.id,
-        type: "escalade",
-        titre: `Escaladé par l'IA (démonstration) : ${campagne.nom}`,
-        message: "La personne dit avoir des vertiges : à rappeler par un humain.",
-        lien: `/campagnes/${campagne.id}`,
-      })),
-    );
+    await deps.notifier(ctx, {
+      roles: ["admin", "agent"],
+      type: "escalade",
+      titre: `Escaladé par l'IA (démonstration) : ${campagne.nom}`,
+      message: "La personne dit avoir des vertiges : à rappeler par un humain.",
+      lien: `/campagnes/${campagne.id}`,
+    });
   }
 }
 

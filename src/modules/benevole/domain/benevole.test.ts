@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { RELANCE_PAR_DEFAUT } from "@/shared/domain/campagne";
+import { deciderResultatAppel, type EtatCible } from "@/modules/crise/domain/resultat-appel";
 import { SCRIPT_CANICULE, SCRIPT_GRAND_FROID, SCRIPT_INONDATION } from "@/modules/crise/domain/scripts-par-defaut";
-import { besoinsPreselectionnes, objetTacheBesoin } from "./besoins";
+import { besoinsPreselectionnes } from "./besoins";
 import { ajouterALaFile, lireFile, messageFile, retirerDeLaFile, synchroniserFile, type ElementFile } from "./file-hors-ligne";
-import { issueAppel, issueProche } from "./issue-appel";
 import { personneSuivante, trierMaListe, type ElementListe } from "./ma-liste";
 import { evaluerReponses, filtrerReponses } from "./questions";
+import {
+  precisionProche,
+  RESULTATS_APPEL,
+  RESULTATS_PROCHE,
+  resultatCampagne,
+  resultatCampagneProche,
+  type ResultatAppel,
+  type ResultatProche,
+} from "./resultats";
 import { nomPrononce, rendreTexte } from "./script";
 
 const VARIABLES = {
@@ -89,48 +98,55 @@ describe("E10-US4 : questions et consignes conditionnelles", () => {
   });
 });
 
-describe("Issue d'un appel (RG-03, RG-04, E10-US5)", () => {
+describe("Boutons bénévole → décision de campagne (RG-03, RG-04, E10-US5) : règles du module Crise", () => {
   const t0 = new Date("2026-07-06T10:00:00+02:00");
-  const cible = { nbTentatives: 0, rangCercleEssaye: 0, cercleJoignable: true };
+  const neuf: EtatCible = { statut: "a_appeler", nbTentatives: 0, rangCercleEssaye: 0 };
+  const bouton = (r: ResultatAppel, etat: EtatCible = neuf, nbContactsCercle = 1) =>
+    deciderResultatAppel(etat, { resultat: resultatCampagne(r), nbContactsCercle }, t0, RELANCE_PAR_DEFAUT);
+  const proche = (r: ResultatProche, etat: EtatCible, rangCercle: number, nbContactsCercle: number) =>
+    deciderResultatAppel(etat, { resultat: resultatCampagneProche(r), rangCercle, nbContactsCercle }, t0, RELANCE_PAR_DEFAUT);
+
+  it("chaque bouton a son résultat de campagne", () => {
+    expect(RESULTATS_APPEL.map(resultatCampagne)).toEqual(["joint_ras", "joint_besoin", "ne_repond_pas", "numero_invalide", "absent", "danger", "evacuation"]);
+    expect(RESULTATS_PROCHE.map(resultatCampagneProche)).toEqual(["couvert_proche", "couvert_proche", "proche_ne_repond_pas"]);
+    expect(precisionProche("va_passer")).toBe("Le proche va passer");
+    expect(precisionProche("confirme")).toBeNull();
+  });
 
   it("« tout va bien » : joint RAS, couvert par l'appel", () => {
-    expect(issueAppel("tout_va_bien", cible, t0, RELANCE_PAR_DEFAUT)).toMatchObject({
-      statut: "joint_ras",
-      nbTentatives: 1,
-      couverture: "appel",
-      alerterCcas: null,
-    });
+    expect(bouton("tout_va_bien")).toMatchObject({ statut: "joint_ras", nbTentatives: 1, couverture: "appel", notification: null });
   });
 
   it("« danger » prévient le CCAS immédiatement", () => {
-    expect(issueAppel("danger", cible, t0, RELANCE_PAR_DEFAUT)).toMatchObject({ statut: "danger", alerterCcas: "danger" });
+    expect(bouton("danger")).toMatchObject({ statut: "danger", notification: "danger" });
   });
 
   it("1re non-réponse : reprogrammée 30 minutes plus tard", () => {
-    const m = issueAppel("ne_repond_pas", cible, t0, RELANCE_PAR_DEFAUT);
-    expect(m.statut).toBe("non_joint");
-    expect(m.nbTentatives).toBe(1);
+    const m = bouton("ne_repond_pas");
+    expect(m).toMatchObject({ statut: "non_joint", nbTentatives: 1 });
     expect(m.prochaineTentativeAt?.getTime()).toBe(t0.getTime() + 30 * 60_000);
   });
 
-  it("dernière tentative sans cercle essayé : on attend le résultat du cercle", () => {
-    const m = issueAppel("ne_repond_pas", { ...cible, nbTentatives: 2 }, t0, RELANCE_PAR_DEFAUT);
-    expect(m).toMatchObject({ statut: "non_joint", prochaineTentativeAt: null, alerterCcas: null });
+  it("dernière tentative, cercle pas encore essayé : on appelle le cercle", () => {
+    expect(bouton("ne_repond_pas", { ...neuf, nbTentatives: 2 })).toMatchObject({
+      statut: "non_joint",
+      prochaineTentativeAt: null,
+      appelerCercle: true,
+      notification: null,
+    });
   });
 
   it("dernière tentative, cercle déjà essayé ou injoignable : transmis au CCAS", () => {
-    expect(issueAppel("ne_repond_pas", { ...cible, nbTentatives: 2, rangCercleEssaye: 1 }, t0, RELANCE_PAR_DEFAUT)).toMatchObject({
+    expect(bouton("ne_repond_pas", { ...neuf, nbTentatives: 2, rangCercleEssaye: 1 })).toMatchObject({
       statut: "non_joint_a_traiter",
-      alerterCcas: "escalade",
+      notification: "escalade",
     });
-    expect(issueAppel("ne_repond_pas", { ...cible, nbTentatives: 2, cercleJoignable: false }, t0, RELANCE_PAR_DEFAUT).statut).toBe(
-      "non_joint_a_traiter",
-    );
+    expect(bouton("ne_repond_pas", { ...neuf, nbTentatives: 2 }, 0).statut).toBe("non_joint_a_traiter");
   });
 
   it("le proche confirme ou va passer : couvert par un proche", () => {
     for (const r of ["confirme", "va_passer"] as const) {
-      expect(issueProche(r, { nbTentatives: 1, cercleEpuise: false }, RELANCE_PAR_DEFAUT)).toMatchObject({
+      expect(proche(r, { statut: "non_joint", nbTentatives: 1, rangCercleEssaye: 0 }, 1, 2)).toMatchObject({
         statut: "couvert_proche",
         couverture: "proche",
       });
@@ -138,11 +154,16 @@ describe("Issue d'un appel (RG-03, RG-04, E10-US5)", () => {
   });
 
   it("le proche ne répond pas : contact suivant, puis CCAS si plus aucune tentative", () => {
-    expect(issueProche("ne_repond_pas", { nbTentatives: 1, cercleEpuise: false }, RELANCE_PAR_DEFAUT)).toBeNull();
-    expect(issueProche("ne_repond_pas", { nbTentatives: 1, cercleEpuise: true }, RELANCE_PAR_DEFAUT)).toBeNull();
-    expect(issueProche("ne_repond_pas", { nbTentatives: 3, cercleEpuise: true }, RELANCE_PAR_DEFAUT)).toMatchObject({
+    const relance = new Date("2026-07-06T10:30:00+02:00");
+    const apres1 = { statut: "non_joint" as const, nbTentatives: 1, rangCercleEssaye: 0, prochaineTentativeAt: relance };
+    // Proche suivant : la personne reste non jointe, sa relance est conservée.
+    expect(proche("ne_repond_pas", apres1, 1, 2)).toMatchObject({ statut: "non_joint", appelerCercle: true, rangCercleEssaye: 1, prochaineTentativeAt: relance });
+    // Plus personne mais des tentatives restent : on attend la relance, sans alerter.
+    expect(proche("ne_repond_pas", apres1, 1, 1)).toMatchObject({ statut: "non_joint", appelerCercle: false, notification: null, prochaineTentativeAt: relance });
+    // Plus personne et toutes les tentatives faites : le CCAS prend le relais.
+    expect(proche("ne_repond_pas", { ...apres1, nbTentatives: 3, prochaineTentativeAt: null }, 1, 1)).toMatchObject({
       statut: "non_joint_a_traiter",
-      alerterCcas: "escalade",
+      notification: "escalade",
     });
   });
 });
@@ -186,11 +207,6 @@ describe("E10-US3 Ma liste", () => {
 describe("E10-US7 besoins", () => {
   it("ne présélectionne que les choix rapides", () => {
     expect(besoinsPreselectionnes(["isolement", "courses", "eau"])).toEqual(["courses", "eau"]);
-  });
-  it("rédige l'objet de la tâche", () => {
-    expect(objetTacheBesoin("Mme Simone Dupont", ["eau", "medicaments"], "pack de 6")).toBe(
-      "Besoin signalé par téléphone pour Mme Simone Dupont : eau, médicaments (pack de 6)",
-    );
   });
 });
 
