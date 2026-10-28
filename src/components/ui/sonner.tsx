@@ -34,8 +34,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
         } as React.CSSProperties
       }
       toastOptions={{
+        // DA : police de l'application, texte courant ≥ 16 px, bordure plutôt qu'ombre.
         classNames: {
-          toast: "cn-toast",
+          toast: "cn-toast !font-sans !text-base !shadow-none",
         },
       }}
       {...props}

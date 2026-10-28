@@ -210,9 +210,9 @@ export function TableauDeBordCampagne({ initial, vagueDemandee }: { initial: Don
             ))}
           </div>
         )}
-        <div className="flex flex-col gap-2 border-t pt-4">
-          <Libelle>Détail par statut</Libelle>
-          <p className="flex flex-wrap gap-x-5 gap-y-1 text-[0.9375rem]">
+        <details className="border-t pt-2">
+          <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-primary">Détail par statut</summary>
+          <p className="flex flex-wrap gap-x-5 gap-y-1 pb-2 text-[0.9375rem]">
             <span>
               En cours d&apos;appel : <strong className="tabular">{indicateurs.enCours}</strong>
             </span>
@@ -222,7 +222,7 @@ export function TableauDeBordCampagne({ initial, vagueDemandee }: { initial: Don
               </span>
             ))}
           </p>
-        </div>
+        </details>
       </Surface>
 
       <div className="grid gap-8 lg:grid-cols-2">

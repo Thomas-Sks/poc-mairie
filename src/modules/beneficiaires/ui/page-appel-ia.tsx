@@ -1,11 +1,10 @@
 /** E11-US4 / US6 (maquette) — Détail d'un appel par l'assistant IA : résumé, réponses, risque, transcription. */
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Bot, User } from "lucide-react";
+import { Bot, User } from "lucide-react";
 import { z } from "zod";
 import { formaterDateHeure } from "@/shared/domain/dates";
 import { STATUT_CIBLE_LIBELLES, type NiveauRisque, type Ton } from "@/shared/domain/vocabulaire";
-import { Pastille, Proprietes, Section, Surface } from "@/shared/ui/elements";
+import { LienRetour, Pastille, Proprietes, Section, Surface } from "@/shared/ui/elements";
 import { cn } from "@/lib/utils";
 import { casDUsage } from "../infrastructure";
 import { chargerFiche } from "./cadre-fiche";
@@ -27,10 +26,7 @@ export async function PageAppelIa({ id, interactionId }: { id: string; interacti
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href={`/beneficiaires/${id}/historique`} className="inline-flex min-h-11 w-fit items-center gap-2 font-medium text-primary hover:underline">
-        <ArrowLeft className="size-4" aria-hidden />
-        Retour à l&apos;historique
-      </Link>
+      <LienRetour href={`/beneficiaires/${id}/historique`}>Retour à l&apos;historique</LienRetour>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <Surface className="p-5 sm:p-6">

@@ -3,12 +3,12 @@
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Contexte } from "@/shared/application/contexte";
 import { formaterDate } from "@/shared/domain/dates";
 import { peut } from "@/shared/domain/permissions";
-import { EnTetePage, EtatVide, Page, Pastille, Surface } from "@/shared/ui/elements";
+import { EnTetePage, EtatVide, LienRetour, Page, Pastille, Surface } from "@/shared/ui/elements";
 import { contexteAvec } from "@/shared/infrastructure/session";
 import { decrireFiltre } from "../domain/filtre";
 import { ListeIntrouvable } from "../application/rechercher-beneficiaire-ids";
@@ -128,11 +128,7 @@ export async function PageListe({ id }: { id: string }) {
   return (
     <Page className="max-w-none">
       <EnTetePage
-        retour={
-          <Link href="/listes" className="inline-flex min-h-11 items-center gap-1 self-start font-medium text-primary hover:underline">
-            <ChevronLeft className="size-4" aria-hidden /> Toutes les listes
-          </Link>
-        }
+        retour={<LienRetour href="/listes">Toutes les listes</LienRetour>}
         titre={liste.nom}
         description={description}
         actions={droits.ecrire && <ActionsListe id={liste.id} nom={liste.nom} />}

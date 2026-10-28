@@ -255,7 +255,7 @@ export function FormulaireInscription({ commune }: { commune: CommuneFormulaire 
             {commune.structureTelephone}
           </a>
           .{" "}
-          <button type="button" onClick={recommencer} className="font-semibold text-primary underline">
+          <button type="button" onClick={recommencer} className="inline-flex min-h-11 items-center text-left font-semibold text-primary underline">
             Effacer mes réponses et recommencer
           </button>
         </p>

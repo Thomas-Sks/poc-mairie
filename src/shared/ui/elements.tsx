@@ -5,7 +5,9 @@
  * dessus (`Surface`). On ne met jamais une Surface (ou toute boîte bordée/colorée) dans une autre :
  * à l'intérieur d'une surface, on hiérarchise avec des titres, de l'espace et des séparateurs (`divide-y`).
  */
+import Link from "next/link";
 import type { ReactNode } from "react";
+import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NiveauPriorite, Ton } from "@/shared/domain/vocabulaire";
 
@@ -31,6 +33,16 @@ export function EnTetePage({
         {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
       </div>
     </header>
+  );
+}
+
+/** Lien « retour » placé au-dessus du titre (prop `retour` d'`EnTetePage`) : même forme dans tous les modules. */
+export function LienRetour({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="inline-flex min-h-11 w-fit items-center gap-2 font-medium text-primary underline-offset-4 hover:underline print:hidden">
+      <ArrowLeft className="size-4" aria-hidden />
+      {children}
+    </Link>
   );
 }
 

@@ -149,7 +149,7 @@ export default function CarteLeaflet({
           )}
         </div>
       )}
-      <div className="relative h-[60vh] min-h-[22rem]">
+      <div className="relative isolate h-[60vh] min-h-[22rem]">
         <MapContainer center={CENTRE_PAR_DEFAUT} zoom={14} className="size-full rounded-b-lg" scrollWheelZoom fadeAnimation={false} zoomAnimation={false} markerZoomAnimation={false}>
           <TileLayer
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"

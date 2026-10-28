@@ -36,10 +36,16 @@ type Props = {
   onChange: () => void;
 };
 
+/** Lignes affichées d'un coup : la liste complète d'une canicule (150 personnes) rendrait l'écran interminable. */
+const PAR_PAGE = 25;
+
 export function ListeCibles({ campagneId, cibles, membres, active, nbTentativesMax, onTraiter, onChange }: Props) {
   const [filtre, setFiltre] = useState<Filtre>("a_traiter");
+  const [nbAffichees, setNbAffichees] = useState(PAR_PAGE);
   const garde = FILTRES.find((f) => f.valeur === filtre)!.garde;
-  const visibles = cibles.filter(garde);
+  const correspondantes = cibles.filter(garde);
+  const visibles = correspondantes.slice(0, nbAffichees);
+  const restantes = correspondantes.length - visibles.length;
   const appelants = membres.filter((m) => m.role !== "admin" && m.role !== "super_admin");
   const nomMembre = (uid: string | null) => {
     const m = membres.find((x) => x.id === uid);
@@ -120,7 +126,15 @@ export function ListeCibles({ campagneId, cibles, membres, active, nbTentativesM
     <div className="flex flex-col gap-4">
       <div role="group" aria-label="Filtrer la liste" className="flex flex-wrap gap-2">
         {FILTRES.map((f) => (
-          <Button key={f.valeur} variant={filtre === f.valeur ? "secondary" : "ghost"} aria-pressed={filtre === f.valeur} onClick={() => setFiltre(f.valeur)}>
+          <Button
+            key={f.valeur}
+            variant={filtre === f.valeur ? "secondary" : "ghost"}
+            aria-pressed={filtre === f.valeur}
+            onClick={() => {
+              setFiltre(f.valeur);
+              setNbAffichees(PAR_PAGE);
+            }}
+          >
             {f.libelle}
             <span className="tabular text-muted-foreground">{cibles.filter(f.garde).length}</span>
           </Button>
@@ -201,6 +215,16 @@ export function ListeCibles({ campagneId, cibles, membres, active, nbTentativesM
                 </li>
               ))}
             </ul>
+            {restantes > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3">
+                <span className="text-muted-foreground">
+                  {visibles.length} sur {correspondantes.length}
+                </span>
+                <Button variant="outline" onClick={() => setNbAffichees((n) => n + PAR_PAGE)}>
+                  Afficher {Math.min(PAR_PAGE, restantes)} de plus
+                </Button>
+              </div>
+            )}
           </>
         )}
       </Surface>

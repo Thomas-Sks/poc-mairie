@@ -35,7 +35,34 @@ export function FileValidation({ file, traitees, maintenant }: { file: Inscripti
             <EtatVide titre="Aucune inscription en attente" description="Les nouvelles demandes arrivent ici dès leur envoi, avec une notification." />
           </div>
         ) : (
-          <div className="relative overflow-x-auto">
+          <>
+          {/* Mobile : une ligne cliquable par demande. */}
+          <ul className="divide-y md:hidden">
+            {file.map((i) => (
+              <li key={i.id}>
+                <Link href={`/inscriptions/${i.id}`} className="flex min-h-11 items-center gap-3 px-4 py-4 hover:bg-muted">
+                  <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    {i.fiches.map((f) => (
+                      <span key={f.id} className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">{nomFiche(f)}</span>
+                        <PastillePriorite niveau={f.niveauPriorite} score={f.score} />
+                      </span>
+                    ))}
+                    {i.fiches.some((f) => f.doublons.length > 0) && (
+                      <Pastille ton="warn" className="self-start">
+                        Doublon possible
+                      </Pastille>
+                    )}
+                    <span className="text-sm text-muted-foreground">
+                      {i.adresse ?? "Adresse non renseignée"} · reçue le {formaterDateHeure(i.soumisLe)}
+                    </span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-subtle-foreground" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="relative overflow-x-auto max-md:hidden">
             <table className="w-full min-w-[56rem] text-left">
               <caption className="sr-only">Inscriptions en attente de validation, triées par priorité</caption>
               <thead className="border-b text-sm text-muted-foreground">
@@ -90,6 +117,7 @@ export function FileValidation({ file, traitees, maintenant }: { file: Inscripti
               </tbody>
             </table>
           </div>
+          </>
         )}
       </Surface>
 

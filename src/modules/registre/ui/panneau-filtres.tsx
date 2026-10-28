@@ -184,7 +184,7 @@ function AjoutRue({ onAjouter }: { onAjouter: (voie: string) => void }) {
         }}
       />
       {ouvert && visibles.length > 0 && (
-        <ul id={`${id}-liste`} role="listbox" className="absolute top-full z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg bg-popover p-1 shadow-md ring-1 ring-foreground/10">
+        <ul id={`${id}-liste`} role="listbox" className="absolute top-full z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-lg border bg-popover p-1">
           {visibles.map((v, i) => (
             <li
               key={v}
@@ -194,7 +194,7 @@ function AjoutRue({ onAjouter }: { onAjouter: (voie: string) => void }) {
                 e.preventDefault();
                 choisir(v);
               }}
-              className={cn("flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2", i === actif && "bg-accent text-primary")}
+              className={cn("flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2", i === actif && "bg-accent text-primary")}
             >
               <MapPin className="size-4 shrink-0 text-subtle-foreground" aria-hidden />
               {v}

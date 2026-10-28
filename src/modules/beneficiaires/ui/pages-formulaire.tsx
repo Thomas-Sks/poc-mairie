@@ -1,26 +1,15 @@
 /** Pages de création (E1-US1) et de modification (E1-US3) d'une fiche. */
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { contexteAvec } from "@/shared/infrastructure/session";
 import { aujourdhui } from "@/shared/domain/dates";
 import { peut } from "@/shared/domain/permissions";
-import { EnTetePage, Page } from "@/shared/ui/elements";
+import { EnTetePage, LienRetour, Page } from "@/shared/ui/elements";
 import { libelleAdresse, nomComplet, SANTE_VIDE, type SaisieFiche } from "../domain/fiche";
 import { saisieDepuisFiche } from "../application/modifier-fiche";
 import { casDUsage } from "../infrastructure";
 import { creerFicheAction, modifierFicheAction } from "./actions";
 import { FormulaireFiche } from "./formulaire-fiche";
-
-function LienRetour({ href, libelle }: { href: string; libelle: string }) {
-  return (
-    <Link href={href} className="inline-flex min-h-11 w-fit items-center gap-2 font-medium text-primary hover:underline">
-      <ArrowLeft className="size-4" aria-hidden />
-      {libelle}
-    </Link>
-  );
-}
 
 function saisieVide(jour: string): SaisieFiche {
   return {
@@ -83,7 +72,7 @@ export async function PageNouvelleFiche() {
   return (
     <Page className="max-w-4xl">
       <EnTetePage
-        retour={<LienRetour href="/beneficiaires" libelle="Bénéficiaires" />}
+        retour={<LienRetour href="/beneficiaires">Bénéficiaires</LienRetour>}
         titre="Nouvelle fiche"
         description="Les champs marqués d'un astérisque sont obligatoires. Le score de priorité est calculé automatiquement."
       />
@@ -112,7 +101,7 @@ export async function PageModifierFiche({ id }: { id: string }) {
   return (
     <Page className="max-w-4xl">
       <EnTetePage
-        retour={<LienRetour href={`/beneficiaires/${id}`} libelle="Retour à la fiche" />}
+        retour={<LienRetour href={`/beneficiaires/${id}`}>Retour à la fiche</LienRetour>}
         titre={`Modifier la fiche de ${nomComplet(fiche.beneficiaire)}`}
         description="Chaque modification est enregistrée dans l'historique de la fiche et le score de priorité est recalculé."
       />

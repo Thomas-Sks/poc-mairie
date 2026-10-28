@@ -3,10 +3,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const ONGLETS = [
+const ONGLETS: { segment: string; libelle: string; court?: string }[] = [
   { segment: "", libelle: "Infos" },
   { segment: "/cercle", libelle: "Cercle" },
-  { segment: "/intervenants", libelle: "Intervenants et planning" },
+  { segment: "/intervenants", libelle: "Intervenants et planning", court: "Intervenants" },
   { segment: "/indisponibilites", libelle: "Indisponibilités" },
   { segment: "/historique", libelle: "Historique" },
 ];
@@ -16,8 +16,9 @@ export function OngletsFiche({ beneficiaireId, compteurs }: { beneficiaireId: st
   const pathname = usePathname();
   const base = `/beneficiaires/${beneficiaireId}`;
   return (
-    <nav aria-label="Sections de la fiche" className="-mx-4 overflow-x-auto border-b px-4 sm:mx-0 sm:px-0">
-      <ul className="flex min-w-max gap-1">
+    <nav aria-label="Sections de la fiche" className="border-b">
+      {/* Mobile : les onglets passent à la ligne plutôt que de défiler hors de l'écran. */}
+      <ul className="flex flex-wrap gap-x-1">
         {ONGLETS.map((o) => {
           const href = `${base}${o.segment}`;
           const actif = o.segment === "" ? pathname === base || pathname.startsWith(`${base}/appels-ia`) : pathname.startsWith(href);
@@ -32,7 +33,14 @@ export function OngletsFiche({ beneficiaireId, compteurs }: { beneficiaireId: st
                   actif && "border-primary font-semibold text-primary hover:text-primary",
                 )}
               >
-                {o.libelle}
+                {o.court ? (
+                  <>
+                    <span className="sm:hidden">{o.court}</span>
+                    <span className="max-sm:hidden">{o.libelle}</span>
+                  </>
+                ) : (
+                  o.libelle
+                )}
                 {compteur !== undefined && compteur > 0 && <span className="tabular text-sm text-subtle-foreground">{compteur}</span>}
               </Link>
             </li>

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, PencilLine } from "lucide-react";
+import { PencilLine } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { aujourdhui, calculerAge, formaterDate, formaterDateHeure } from "@/shared/domain/dates";
-import { Bandeau, EnTetePage, Libelle, Page, PastillePriorite, Proprietes, Section, Surface } from "@/shared/ui/elements";
+import { Bandeau, EnTetePage, Libelle, LienRetour, Page, PastillePriorite, Proprietes, Section, Surface } from "@/shared/ui/elements";
 import { MOTIF_DOUBLON_LIBELLES } from "../domain/doublons";
 import { lireReponses } from "../domain/lecture";
 import type { DetailInscription } from "../application/file-validation";
@@ -22,12 +22,7 @@ export function DetailInscriptionVue({ inscription: i, maintenant }: { inscripti
   return (
     <Page>
       <EnTetePage
-        retour={
-          <Link href="/inscriptions" className={`${buttonVariants({ variant: "ghost" })} -ml-3 self-start`}>
-            <ArrowLeft aria-hidden />
-            Inscriptions à valider
-          </Link>
-        }
+        retour={<LienRetour href="/inscriptions">Inscriptions à valider</LienRetour>}
         titre={noms}
         description={`Demande ${referenceInscription(i.id)} reçue le ${formaterDateHeure(i.soumisLe)}, remplie par ${i.reponses.remplisseur === "tiers" ? "un proche" : "la personne elle-même"}.`}
         actions={enAttente && fichesEnAttente.length > 0 && <ActionsInscription id={i.id} noms={fichesEnAttente.map(nomFiche).join(" et ")} nbFiches={fichesEnAttente.length} />}

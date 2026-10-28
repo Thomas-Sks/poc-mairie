@@ -1,10 +1,9 @@
 /**
  * Cadre commun des pages de fiche : en-tête, informations prioritaires (E5-US4), synthèse (E1-US2), onglets.
  */
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
-import { ArrowLeft, Info, MapPinOff } from "lucide-react";
+import { Info, MapPinOff } from "lucide-react";
 import { z } from "zod";
 import { contexteAvec } from "@/shared/infrastructure/session";
 import { ajouterJours, aujourdhui, formaterDate } from "@/shared/domain/dates";
@@ -16,7 +15,7 @@ import {
   STATUT_CIBLE_LIBELLES,
   STATUT_FICHE_LIBELLES,
 } from "@/shared/domain/vocabulaire";
-import { Bandeau, EnTetePage, Libelle, Pastille, PastillePriorite, Surface } from "@/shared/ui/elements";
+import { Bandeau, EnTetePage, Libelle, LienRetour, Pastille, PastillePriorite, Surface } from "@/shared/ui/elements";
 import { libelleAdresse, nomComplet } from "../domain/fiche";
 import type { Synthese } from "../domain/synthese";
 import { casDUsage } from "../infrastructure";
@@ -135,12 +134,7 @@ export async function CadreFiche({ id, children }: { id: string; children: React
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
       <EnTetePage
-        retour={
-          <Link href="/beneficiaires" className="inline-flex min-h-11 w-fit items-center gap-2 font-medium text-primary hover:underline">
-            <ArrowLeft className="size-4" aria-hidden />
-            Bénéficiaires
-          </Link>
-        }
+        retour={<LienRetour href="/beneficiaires">Bénéficiaires</LienRetour>}
         titre={
           <span className="flex flex-wrap items-center gap-3">
             {nomComplet(b)}
