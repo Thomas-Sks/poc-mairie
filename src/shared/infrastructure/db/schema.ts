@@ -593,3 +593,34 @@ export const presences = pgTable(
   },
   (t) => [primaryKey({ columns: [t.utilisateurId, t.ressource] })],
 );
+
+// ─── Import Excel (E15) ───────────────────────────────────────────────────────
+
+/** E15-US2 : correspondance de colonnes sauvegardée, retrouvée pour un fichier de même format (même en-têtes). */
+export const mappingsImport = pgTable("mappings_import", {
+  id: id(),
+  communeId: communeId(),
+  /** Empreinte des en-têtes du fichier (module import). */
+  signature: text("signature").notNull(),
+  nom: text("nom").notNull(),
+  /** En-tête de colonne → champ de la plateforme (ou « ignorer » / « note »). */
+  colonnes: jsonb("colonnes").$type<Record<string, string>>().notNull(),
+  /** Champ → valeur brute → valeur de la plateforme (listes). */
+  valeurs: jsonb("valeurs").$type<Record<string, Record<string, string>>>().notNull().default({}),
+  creePar: uuid("cree_par").references(() => utilisateurs.id),
+  updatedAt: updatedAt(),
+});
+
+/** E15-US3 : notes libres rattachées à une fiche (colonnes « fourre-tout » importées). */
+export const notesFiche = pgTable(
+  "notes_fiche",
+  {
+    id: id(),
+    beneficiaireId: uuid("beneficiaire_id").notNull().references(() => beneficiaires.id, { onDelete: "cascade" }),
+    texte: text("texte").notNull(),
+    source: text("source").notNull().default("import"),
+    auteurId: uuid("auteur_id").references(() => utilisateurs.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index("notes_fiche_beneficiaire_idx").on(t.beneficiaireId)],
+);
