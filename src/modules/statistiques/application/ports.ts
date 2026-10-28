@@ -3,6 +3,7 @@ import type { NiveauPriorite } from "@/shared/domain/vocabulaire";
 import type { Widget } from "../domain/dashboard";
 import type { DefinitionRequete, Periode, Referentiels } from "../domain/requete";
 import type { ResultatBrut } from "../domain/resultat";
+import type { IndicateursBruts } from "../domain/vue-ensemble";
 
 export type PersonneTrouvee = {
   id: string;
@@ -55,4 +56,9 @@ export interface DashboardRepository {
   creer(communeId: string, auteurId: string, nom: string): Promise<string>;
   modifier(communeId: string, id: string, champs: Partial<Pick<Dashboard, "nom" | "partage" | "widgets">>): Promise<void>;
   supprimer(communeId: string, id: string): Promise<void>;
+}
+
+/** Indicateurs de la vue d'ensemble (comptages bruts sur les fiches actives). */
+export interface IndicateursRepository {
+  charger(communeId: string, jour: DateISO): Promise<IndicateursBruts>;
 }

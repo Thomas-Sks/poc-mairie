@@ -2,6 +2,8 @@ import "server-only";
 import type { Contexte } from "@/shared/application/contexte";
 import * as dash from "../application/dashboards";
 import * as exp from "../application/explorer";
+import { consulterVueEnsemble } from "../application/vue-ensemble";
+import { indicateursDrizzle } from "./indicateurs-drizzle";
 import { dashboardRepositoryDrizzle, requeteRepositoryDrizzle } from "./depots-drizzle";
 import { moteurStatistiquesDrizzle } from "./moteur-drizzle";
 
@@ -12,6 +14,7 @@ const deps = { moteur: moteurStatistiquesDrizzle, dashboards: dashboardRepositor
 type Entree<F extends (...args: never[]) => unknown> = Parameters<F>[2];
 
 export const casDUsage = {
+  consulterVueEnsemble: (ctx: Contexte) => consulterVueEnsemble({ indicateurs: indicateursDrizzle }, ctx),
   executerRequete: (ctx: Contexte, e: Entree<typeof exp.executerRequete>) => exp.executerRequete(moteur, ctx, e),
   listerPersonnes: (ctx: Contexte, e: Entree<typeof exp.listerPersonnes>) => exp.listerPersonnes(moteur, ctx, e),
   obtenirReferentiels: (ctx: Contexte) => exp.obtenirReferentiels(moteur, ctx),

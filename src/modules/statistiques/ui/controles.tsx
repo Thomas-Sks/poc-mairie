@@ -42,9 +42,10 @@ export function Bascule({ actif, className, ...props }: ComponentProps<"button">
 }
 
 const ONGLETS = [
-  { href: "/statistiques", libelle: "Explorateur" },
-  { href: "/statistiques/requetes", libelle: "Requêtes enregistrées" },
+  { href: "/statistiques", libelle: "Vue d'ensemble" },
+  { href: "/statistiques/explorateur", libelle: "Explorateur" },
   { href: "/statistiques/tableaux-de-bord", libelle: "Tableaux de bord" },
+  { href: "/statistiques/requetes", libelle: "Requêtes enregistrées" },
 ] as const;
 
 /** Sous-navigation du module, posée sur le fond (pas dans une surface). */

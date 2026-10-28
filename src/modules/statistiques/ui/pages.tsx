@@ -35,7 +35,7 @@ export async function PageExplorateur({ requeteId }: { requeteId?: string }) {
         titre="Statistiques"
         description="Comptez, filtrez et découpez les données du registre. Commencez par une question ou par un exemple."
       />
-      <SousNavigation actif="/statistiques" />
+      <SousNavigation actif="/statistiques/explorateur" />
       <Explorateur
         key={requete?.id ?? "nouvelle"}
         initiale={initiale}
@@ -67,7 +67,7 @@ export async function PageRequetes() {
             {requetes.map((r) => (
               <li key={r.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <Link href={`/statistiques?requete=${r.id}`} className="font-semibold text-primary underline-offset-4 hover:underline">
+                  <Link href={`/statistiques/explorateur?requete=${r.id}`} className="font-semibold text-primary underline-offset-4 hover:underline">
                     {r.nom}
                   </Link>
                   <p className="text-muted-foreground">
@@ -79,7 +79,7 @@ export async function PageRequetes() {
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <Link
-                    href={`/statistiques?requete=${r.id}`}
+                    href={`/statistiques/explorateur?requete=${r.id}`}
                     className="inline-flex h-11 items-center rounded-lg border border-input bg-card px-4 font-semibold hover:bg-muted"
                   >
                     Ouvrir
