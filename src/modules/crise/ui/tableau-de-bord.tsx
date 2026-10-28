@@ -1,6 +1,6 @@
 "use client";
 
-import { classeBouton } from "./classe-bouton";
+import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useState } from "react";
@@ -80,11 +80,11 @@ export function TableauDeBordCampagne({ initial, vagueDemandee }: { initial: Don
         actions={
           <>
             {active && <DialogueRepartition campagneId={id} membres={membres} equipe={campagne.equipe} onFait={rafraichir} />}
-            <a href={`/api/campagnes/${id}/export${data.vague ? `?vague=${data.vague}` : ""}`} className={classeBouton({ variant: "outline" })}>
+            <a href={`/api/campagnes/${id}/export${data.vague ? `?vague=${data.vague}` : ""}`} className={buttonVariants({ variant: "outline" })}>
               <Download aria-hidden />
               Export de secours (CSV)
             </a>
-            <Link href={`/campagnes/${id}/rapport`} className={classeBouton({ variant: "outline" })}>
+            <Link href={`/campagnes/${id}/rapport`} className={buttonVariants({ variant: "outline" })}>
               <FileText aria-hidden />
               Rapport
             </Link>
@@ -124,7 +124,7 @@ export function TableauDeBordCampagne({ initial, vagueDemandee }: { initial: Don
               key={v}
               href={`/campagnes/${id}?vague=${v}`}
               aria-current={v === data.vague ? "page" : undefined}
-              className={classeBouton({ variant: v === data.vague ? "secondary" : "ghost", size: "default" })}
+              className={buttonVariants({ variant: v === data.vague ? "secondary" : "ghost", size: "default" })}
             >
               {v.split("-").reverse().slice(0, 2).join("/")}
             </Link>
@@ -164,7 +164,7 @@ export function TableauDeBordCampagne({ initial, vagueDemandee }: { initial: Don
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {c.appelIaId && (
-                    <Link href={`/campagnes/${id}/appels-ia/${c.appelIaId}`} className={classeBouton({ variant: "outline" })}>
+                    <Link href={`/campagnes/${id}/appels-ia/${c.appelIaId}`} className={buttonVariants({ variant: "outline" })}>
                       Voir l&apos;appel IA
                     </Link>
                   )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { classeBouton } from "./classe-bouton";
+import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -78,7 +78,7 @@ export function ListeCibles({ campagneId, cibles, membres, active, nbTentativesM
   const actions = (c: CibleVue) => (
     <div className="flex flex-wrap justify-end gap-2">
       {c.appelIaId && (
-        <Link href={`/campagnes/${campagneId}/appels-ia/${c.appelIaId}`} className={classeBouton({ variant: "ghost" })}>
+        <Link href={`/campagnes/${campagneId}/appels-ia/${c.appelIaId}`} className={buttonVariants({ variant: "ghost" })}>
           Appel IA
         </Link>
       )}

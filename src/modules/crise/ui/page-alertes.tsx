@@ -1,4 +1,4 @@
-import { classeBouton } from "./classe-bouton";
+import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import { BellRing, ChevronRight, FileText, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,12 +26,12 @@ function LigneCampagne({ c, rapport }: { c: CampagneResume; rapport?: boolean })
       </div>
       <div className="flex flex-wrap gap-2">
         {rapport && (
-          <Link href={`/campagnes/${c.id}/rapport`} className={classeBouton({ variant: "outline" })}>
+          <Link href={`/campagnes/${c.id}/rapport`} className={buttonVariants({ variant: "outline" })}>
             <FileText aria-hidden />
             Rapport
           </Link>
         )}
-        <Link href={`/campagnes/${c.id}`} className={classeBouton({ variant: rapport ? "ghost" : "outline" })}>
+        <Link href={`/campagnes/${c.id}`} className={buttonVariants({ variant: rapport ? "ghost" : "outline" })}>
           {rapport ? "Bilan" : "Tableau de bord"}
           <ChevronRight aria-hidden />
         </Link>
@@ -49,7 +49,7 @@ export async function PageAlertes({ ctx }: { ctx: Contexte }) {
         description="Déclenchez une alerte, lancez une campagne d'appels et suivez la couverture des personnes en temps réel."
         actions={
           peutDeclencher && (
-            <Link href="/alertes/nouvelle" className={classeBouton({ size: "lg" })}>
+            <Link href="/alertes/nouvelle" className={buttonVariants({ size: "lg" })}>
               <BellRing aria-hidden />
               Déclencher une alerte
             </Link>
@@ -79,7 +79,7 @@ export async function PageAlertes({ ctx }: { ctx: Contexte }) {
                   {a.message && <p className="max-w-[70ch]">{a.message}</p>}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link href={`/alertes/${a.id}/campagne`} className={classeBouton({ variant: a.campagnes.length ? "outline" : "default" })}>
+                  <Link href={`/alertes/${a.id}/campagne`} className={buttonVariants({ variant: a.campagnes.length ? "outline" : "default" })}>
                     <Plus aria-hidden />
                     Créer une campagne
                   </Link>
