@@ -4,7 +4,7 @@
  */
 import { z } from "zod";
 import { BESOINS } from "@/shared/domain/vocabulaire";
-import { RESULTATS_APPEL, RESULTATS_PROCHE } from "../domain/issue-appel";
+import { RESULTATS_APPEL, RESULTATS_PROCHE } from "../domain/resultats";
 
 const texteFacultatif = (max: number) =>
   z

@@ -4,7 +4,7 @@
  */
 import type { Contexte } from "@/shared/application/contexte";
 import type { Besoin } from "@/shared/domain/vocabulaire";
-import type { ResultatAppel, ResultatProche } from "../domain/issue-appel";
+import type { ResultatAppel, ResultatProche } from "../domain/resultats";
 import { evaluerReponses, filtrerReponses } from "../domain/questions";
 import { nomPrononce, rendreTexte, type ScriptAppel } from "../domain/script";
 import { ficheAccessible } from "./acces";
@@ -44,15 +44,13 @@ export async function ouvrirAppel(deps: Pick<Deps, "lecture">, ctx: Contexte, ci
 
 export async function prendreVerrou(deps: Deps, ctx: Contexte, cibleId: string): Promise<boolean> {
   await ficheAccessible(deps.lecture, ctx, cibleId);
-  return deps.journal.prendreVerrou(ctx.commune.id, cibleId, ctx.utilisateur.id, ctx.maintenant);
+  return deps.journal.prendreVerrou(ctx, cibleId);
 }
 
 export async function libererVerrou(deps: Deps, ctx: Contexte, cibleId: string): Promise<void> {
   await ficheAccessible(deps.lecture, ctx, cibleId);
-  await deps.journal.libererVerrou(ctx.commune.id, cibleId, ctx.utilisateur.id);
+  await deps.journal.libererVerrou(ctx, cibleId);
 }
-
-const appelant = (ctx: Contexte) => ({ id: ctx.utilisateur.id, prenom: ctx.utilisateur.prenom, nom: ctx.utilisateur.nom });
 
 export type EntreeResultat = {
   idOperation: string;
@@ -71,12 +69,9 @@ export async function enregistrerResultat(deps: Deps, ctx: Contexte, e: EntreeRe
   const evaluation = evaluerReponses(fiche.script.questions, reponses);
   const besoins =
     e.resultat === "besoin" ? [...new Set<Besoin>([...e.besoins, ...evaluation.besoins])] : [];
-  return deps.journal.enregistrerResultat({
+  return deps.journal.enregistrerResultat(ctx, {
     idOperation: e.idOperation,
-    communeId: ctx.commune.id,
-    appelant: appelant(ctx),
     cibleId: e.cibleId,
-    maintenant: ctx.maintenant,
     resultat: e.resultat,
     reponses,
     besoins,
@@ -92,12 +87,9 @@ export async function enregistrerResultatProche(deps: Deps, ctx: Contexte, e: En
   const fiche = await ficheAccessible(deps.lecture, ctx, e.cibleId);
   // RG-07 : seul un proche du cercle de cette personne peut être concerné.
   if (!fiche.cercle.some((p) => p.lienId === e.lienId)) throw new Error("Proche inconnu pour cette personne.");
-  return deps.journal.enregistrerResultatProche({
+  return deps.journal.enregistrerResultatProche(ctx, {
     idOperation: e.idOperation,
-    communeId: ctx.commune.id,
-    appelant: appelant(ctx),
     cibleId: e.cibleId,
-    maintenant: ctx.maintenant,
     lienId: e.lienId,
     resultat: e.resultat,
     note: e.note,
@@ -109,12 +101,9 @@ export type EntreeDemande = { idOperation: string; cibleId: string; nature: "vis
 export async function creerDemande(deps: Deps, ctx: Contexte, e: EntreeDemande): Promise<void> {
   await ficheAccessible(deps.lecture, ctx, e.cibleId);
   if (e.nature === "info" && !e.sujet?.trim()) throw new Error("Précisez le sujet de la demande.");
-  await deps.journal.creerDemande({
+  await deps.journal.creerDemande(ctx, {
     idOperation: e.idOperation,
-    communeId: ctx.commune.id,
-    appelant: appelant(ctx),
     cibleId: e.cibleId,
-    maintenant: ctx.maintenant,
     nature: e.nature,
     sujet: e.sujet?.trim() || null,
   });

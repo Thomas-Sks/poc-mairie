@@ -28,7 +28,7 @@ import { BESOIN_LIBELLES, RELATION_LIBELLES, type Besoin } from "@/shared/domain
 import { Bandeau, Surface } from "@/shared/ui/elements";
 import type { ProcheAAppeler } from "../application/ports";
 import { BESOINS_RAPIDES } from "../domain/besoins";
-import { RESULTAT_PROCHE_LIBELLES, type ResultatProche } from "../domain/issue-appel";
+import { RESULTAT_PROCHE_LIBELLES, type ResultatProche } from "../domain/resultats";
 import { useEtatFile } from "./file-attente";
 
 export const lienTel = (numero: string) => `tel:${numero.replace(/[^\d+]/g, "")}`;

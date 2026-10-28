@@ -1,14 +1,15 @@
 /**
  * Cas d'usage : traitement d'une cible de campagne (RG-03, RG-04, RG-05 verrou, RG-06, E10-US5 à US7).
- * Utilisés par le tableau de bord CCAS et par l'interface bénévole.
+ * Source de vérité unique du cycle de vie d'une cible : utilisés par le tableau de bord CCAS
+ * et, via son adaptateur `JournalAppels`, par l'interface bénévole.
  */
 import type { Contexte } from "@/shared/application/contexte";
 import { verrouActif, DUREE_VERROU_MS } from "@/shared/domain/campagne";
 import { aujourdhui } from "@/shared/domain/dates";
 import { AccesRefuse, peut } from "@/shared/domain/permissions";
-import { BESOIN_LIBELLES, type Besoin, type StatutCible } from "@/shared/domain/vocabulaire";
-import { deciderResultatAppel, RESULTAT_APPEL_LIBELLES, type DecisionAppel, type ResultatAppel } from "../domain/resultat-appel";
-import type { CibleAppel, DepotCrise, FicheAppel, Membre } from "./ports";
+import type { Besoin, StatutCible } from "@/shared/domain/vocabulaire";
+import { deciderResultatAppel, objetRappelBesoin, RESULTAT_APPEL_LIBELLES, type DecisionAppel, type ResultatAppel } from "../domain/resultat-appel";
+import type { CibleAppel, DepotCrise, FicheAppel, Membre, Notifieur } from "./ports";
 
 export class VerrouPris extends Error {
   constructor(public readonly detenteur: Pick<Membre, "id" | "prenom" | "nom"> | null) {
@@ -40,7 +41,7 @@ async function detenteur(depot: DepotCrise, communeId: string, id: string | null
 
 export type ResultatVerrou = { obtenu: boolean; detenteur: Pick<Membre, "id" | "prenom" | "nom"> | null };
 
-/** RG-05 / E8-US7 : prend le verrou d'appel (« En cours d'appel par Julie »), auto-libéré après 10 min. */
+/** RG-05 / E8-US7 : prend le verrou d'appel (« En cours d'appel par Julie »), auto-libéré après 10 min. Ne change pas le statut. */
 export async function prendreVerrou(deps: { depot: DepotCrise }, ctx: Contexte, entree: { cibleId: string }): Promise<ResultatVerrou> {
   const cible = await chargerCible(deps.depot, ctx, entree.cibleId);
   if (cible.campagneStatut !== "active") throw new Error("La campagne est clôturée.");
@@ -70,15 +71,15 @@ export async function ouvrirFicheAppel(
 export type EntreeResultatAppel = {
   cibleId: string;
   resultat: ResultatAppel;
-  /** Besoins détectés (obligatoire en pratique pour « joint_besoin »). */
+  /** Besoins détectés (« joint_besoin »). */
   besoins?: Besoin[];
   /** Réponses aux questions du script, par identifiant de question. */
   reponses?: Record<string, "oui" | "non">;
   /** Précision libre (ex. la situation de danger en 1 phrase, E10-US6). */
   note?: string | null;
-  /** Contact du cercle appelé (« couvert_proche », « proche_ne_repond_pas »). */
+  /** Contact du cercle appelé (« couvert_proche », « proche_ne_repond_pas ») : son rang est déduit du cercle joignable. */
   contactId?: string | null;
-  /** Rang d'appel du contact du cercle appelé. */
+  /** Rang d'appel du contact du cercle, à défaut d'un `contactId` reconnu. */
   rangCercle?: number;
   dureeMinutes?: number | null;
 };
@@ -91,14 +92,16 @@ export type ResultatEnregistrement = {
   smsSimules: string[];
 };
 
+const RESULTATS_CERCLE: ReadonlySet<ResultatAppel> = new Set(["couvert_proche", "proche_ne_repond_pas"]);
+
 /**
- * Enregistre le résultat d'un appel de campagne :
+ * Enregistre le résultat d'un appel de campagne, pour un agent comme pour un bénévole :
  * décision RG-04 (relances, escalade cercle, « non joint – à traiter »), mise à jour de la cible,
  * interaction liée à la campagne, notification admin + agents (danger, évacuation, escalade),
- * rappel pour un besoin (E10-US7). Libère le verrou sauf s'il faut appeler le cercle.
+ * tâche pour un besoin (E10-US7) ou un numéro à vérifier. Libère le verrou sauf s'il faut appeler le cercle.
  */
 export async function enregistrerResultatAppel(
-  deps: { depot: DepotCrise },
+  deps: { depot: DepotCrise; notifier: Notifieur },
   ctx: Contexte,
   entree: EntreeResultatAppel,
 ): Promise<ResultatEnregistrement> {
@@ -109,16 +112,28 @@ export async function enregistrerResultatAppel(
     throw new VerrouPris(await detenteur(depot, ctx.commune.id, cible.verrouPar));
   }
 
+  // Contact du cercle appelé : son rang est sa place dans le cercle joignable (même base que nbContactsCercle).
+  const contact =
+    RESULTATS_CERCLE.has(entree.resultat) && entree.contactId
+      ? (await depot.obtenirFicheAppel(ctx.commune.id, cible.beneficiaireId))?.cercle.find((c) => c.id === entree.contactId)
+      : undefined;
+
   const besoins = entree.resultat === "joint_besoin" ? [...new Set(entree.besoins ?? [])] : [];
   const decision = deciderResultatAppel(
-    { statut: cible.statut, nbTentatives: cible.nbTentatives, rangCercleEssaye: cible.rangCercleEssaye },
-    { resultat: entree.resultat, besoins, rangCercle: entree.rangCercle, nbContactsCercle: cible.nbContactsCercle },
+    {
+      statut: cible.statut,
+      nbTentatives: cible.nbTentatives,
+      rangCercleEssaye: cible.rangCercleEssaye,
+      prochaineTentativeAt: cible.prochaineTentativeAt,
+    },
+    { resultat: entree.resultat, rangCercle: contact?.rang ?? entree.rangCercle, nbContactsCercle: cible.nbContactsCercle },
     ctx.maintenant,
     cible.relance,
   );
 
-  const libelleResultat = RESULTAT_APPEL_LIBELLES[entree.resultat];
+  const libelleResultat = `${RESULTAT_APPEL_LIBELLES[entree.resultat]}${contact ? ` (${contact.relation}, ${contact.nom})` : ""}`;
   const note = entree.note?.trim() || null;
+  const compteRendu = note ? `${libelleResultat}. ${note}` : libelleResultat;
   await depot.mettreAJourCible(cible.id, {
     statut: decision.statut,
     nbTentatives: decision.nbTentatives,
@@ -126,8 +141,8 @@ export async function enregistrerResultatAppel(
     rangCercleEssaye: decision.rangCercleEssaye,
     couverture: decision.couverture,
     besoins: besoins.length ? besoins : cible.besoins,
-    ...(entree.reponses ? { reponses: entree.reponses } : {}),
-    note: note ?? libelleResultat,
+    ...(entree.reponses && Object.keys(entree.reponses).length ? { reponses: entree.reponses } : {}),
+    note: compteRendu,
     exclue: false,
     verrouPar: decision.appelerCercle ? ctx.utilisateur.id : null,
     verrouAt: decision.appelerCercle ? ctx.maintenant : null,
@@ -139,42 +154,36 @@ export async function enregistrerResultatAppel(
     type: "appel_sortant",
     survenueLe: ctx.maintenant,
     auteurId: ctx.utilisateur.id,
-    interlocuteurContactId: entree.contactId ?? null,
+    interlocuteurContactId: contact?.id ?? null,
     resultat: decision.statut,
-    compteRendu: note ? `${libelleResultat}. ${note}` : libelleResultat,
+    compteRendu,
     besoins,
     dureeMinutes: entree.dureeMinutes ?? null,
   });
 
   const smsSimules: string[] = [];
   if (decision.notification) {
-    const equipeCcas = await depot.listerMembres(ctx.commune.id, ["admin", "agent"]);
     const titre =
       decision.statut === "danger"
         ? `Danger – urgence : ${cible.beneficiaireNom}`
         : decision.statut === "evacuation"
           ? `Besoin d'évacuation : ${cible.beneficiaireNom}`
           : `Non joint – à traiter : ${cible.beneficiaireNom}`;
-    const message = `${cible.campagneNom} · signalé par ${ctx.utilisateur.prenom} ${ctx.utilisateur.nom}${note ? ` : ${note}` : ""}`;
-    await depot.creerNotifications(
-      ctx.commune.id,
-      equipeCcas.map((m) => ({ destinataireId: m.id, type: decision.notification!, titre, message, lien: `/campagnes/${cible.campagneId}` })),
-    );
+    const suite = decision.notification === "escalade" ? " À décider : visite à domicile, police municipale ou pompiers." : "";
+    const message = `${cible.campagneNom} · signalé par ${ctx.utilisateur.prenom} ${ctx.utilisateur.nom}${note ? ` : ${note}` : ""}.${suite}`;
+    await deps.notifier(ctx, { roles: ["admin", "agent"], type: decision.notification, titre, message, lien: `/campagnes/${cible.campagneId}` });
     // E14-US2 : SMS simulé pour les événements critiques uniquement.
     if (decision.notification === "danger") {
+      const equipeCcas = await depot.listerMembres(ctx.commune.id, ["admin", "agent"]);
       for (const m of equipeCcas) smsSimules.push(`SMS envoyé à ${m.prenom} ${m.nom}${m.telephone ? ` (${m.telephone})` : ""} : ${titre}`);
     }
   }
 
-  if (decision.creerRappelBesoin) {
-    await depot.creerRappel(ctx.commune.id, {
-      beneficiaireId: cible.beneficiaireId,
-      objet: `Besoin signalé (${besoins.map((b) => BESOIN_LIBELLES[b]).join(", ")}) : ${cible.beneficiaireNom} – ${cible.campagneNom}`,
-      echeance: aujourdhui(ctx.maintenant),
-      creePar: ctx.utilisateur.id,
-      urgent: false,
-    });
-  }
+  const tache = (type: "besoin" | "verification", objet: string, urgent: boolean) =>
+    depot.creerRappel(ctx.commune.id, { type, beneficiaireId: cible.beneficiaireId, objet, echeance: aujourdhui(ctx.maintenant), creePar: ctx.utilisateur.id, urgent });
+  // E10-US7 : un besoin signalé pendant l'alerte est à traiter dans la journée.
+  if (decision.creerRappelBesoin) await tache("besoin", objetRappelBesoin(cible.beneficiaireNom, besoins, cible.campagneNom, note), true);
+  if (decision.creerRappelVerification) await tache("verification", `Numéro de téléphone à vérifier : ${cible.beneficiaireNom} – ${cible.campagneNom}`, false);
 
   return { cibleId: cible.id, statut: decision.statut, decision, smsSimules };
 }

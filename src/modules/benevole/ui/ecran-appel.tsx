@@ -29,7 +29,7 @@ import type { Besoin, StatutCible } from "@/shared/domain/vocabulaire";
 import { Bandeau, Surface } from "@/shared/ui/elements";
 import type { EcranAppel as DonneesAppel } from "../application/appel";
 import { besoinsPreselectionnes } from "../domain/besoins";
-import type { ResultatAppel } from "../domain/issue-appel";
+import type { ResultatAppel } from "../domain/resultats";
 import { estPreoccupante, evaluerReponses, type Reponse, type Reponses } from "../domain/questions";
 import { nomPrononce } from "../domain/script";
 import { libererVerrouAction, prendreVerrouAction } from "./actions";

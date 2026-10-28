@@ -1,11 +1,12 @@
 import "server-only";
 import type { Contexte } from "@/shared/application/contexte";
+import { notifier } from "@/modules/notifications/infrastructure";
 import * as cas from "../application";
 import { depotCriseDrizzle } from "./depot-crise-drizzle";
 import { selecteurRegistre } from "./selecteur-registre";
 
 const depot = depotCriseDrizzle;
-const deps = { depot, selecteur: selecteurRegistre };
+const deps = { depot, selecteur: selecteurRegistre, notifier };
 
 type Entree<F extends (...args: never[]) => unknown> = Parameters<F>[2];
 
@@ -31,7 +32,7 @@ export const casDUsageCrise = {
   consulterAppelIa: (ctx: Contexte, e: Entree<typeof cas.consulterAppelIa>) => cas.consulterAppelIa(deps, ctx, e),
 
   // Appels (aussi utilisés par l'interface bénévole)
-  enregistrerResultatAppel: (ctx: Contexte, e: cas.EntreeResultatAppel) => cas.enregistrerResultatAppel({ depot }, ctx, e),
+  enregistrerResultatAppel: (ctx: Contexte, e: cas.EntreeResultatAppel) => cas.enregistrerResultatAppel({ depot, notifier }, ctx, e),
   prendreVerrou: (ctx: Contexte, e: { cibleId: string }) => cas.prendreVerrou({ depot }, ctx, e),
   libererVerrou: (ctx: Contexte, e: { cibleId: string }) => cas.libererVerrou({ depot }, ctx, e),
   ouvrirFicheAppel: (ctx: Contexte, e: { cibleId: string }) => cas.ouvrirFicheAppel({ depot }, ctx, e),

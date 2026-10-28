@@ -130,6 +130,7 @@ export type CibleAppel = {
   vagueDate: DateISO;
   statut: StatutCible;
   nbTentatives: number;
+  prochaineTentativeAt: Date | null;
   rangCercleEssaye: number;
   assigneA: string | null;
   verrouPar: string | null;
@@ -180,13 +181,24 @@ export type NouvelleInteraction = {
   detailIa?: DetailIa | null;
 };
 
-export type NouvelleNotification = {
-  destinataireId: string;
-  type: "escalade" | "danger" | "assignation" | "info";
-  titre: string;
-  message: string | null;
-  lien: string | null;
-};
+/**
+ * Notification in-app (E14-US1) : fournie par le module Notifications (`notifier`).
+ * Destinataires nommés et/ou tous les membres actifs de certains rôles de la commune du contexte.
+ */
+export type Notifieur = (
+  ctx: Contexte,
+  notification: {
+    destinataires?: string[];
+    roles?: Role[];
+    type: "escalade" | "danger" | "assignation" | "info";
+    titre: string;
+    message?: string | null;
+    lien?: string | null;
+    exclureAuteur?: boolean;
+  },
+) => Promise<number>;
+
+export type TypeRappelAppel = "besoin" | "verification";
 
 export type InteractionRapport = {
   id: string;
@@ -259,8 +271,10 @@ export interface DepotCrise {
   poserVerrou(cibleId: string, utilisateurId: string, maintenant: Date, expireAvant: Date): Promise<{ obtenu: boolean; detenteur: string | null }>;
   leverVerrou(cibleId: string, utilisateurId: string): Promise<void>;
   creerInteraction(communeId: string, interaction: NouvelleInteraction): Promise<string>;
-  creerNotifications(communeId: string, notifications: NouvelleNotification[]): Promise<void>;
-  creerRappel(communeId: string, rappel: { beneficiaireId: string; objet: string; echeance: DateISO; creePar: string | null; urgent: boolean }): Promise<void>;
+  creerRappel(
+    communeId: string,
+    rappel: { type: TypeRappelAppel; beneficiaireId: string; objet: string; echeance: DateISO; creePar: string | null; urgent: boolean },
+  ): Promise<void>;
 
   // Rapport et maquettes IA
   donneesRapport(communeId: string, campagneId: string): Promise<DonneesRapport | null>;
