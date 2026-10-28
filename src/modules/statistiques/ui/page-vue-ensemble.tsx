@@ -232,7 +232,7 @@ export async function PageVueEnsemble() {
           </div>
           <ul className="divide-y">
             {[
-              { libelle: "Fiches non vérifiées depuis 12 mois", n: v.qualite.aReverifier, href: "/beneficiaires" },
+              { libelle: "Fiches non vérifiées depuis 12 mois", n: v.qualite.aReverifier, href: "/beneficiaires?non-verifiee-depuis=12" },
               { libelle: "Personnes sans téléphone (visite nécessaire)", n: v.qualite.sansTelephone, href: "/beneficiaires" },
               { libelle: "Adresses à vérifier", n: v.qualite.adresseAVerifier, href: "/beneficiaires" },
               { libelle: "Inscriptions en attente de validation", n: v.qualite.inscriptionsEnAttente, href: "/inscriptions" },
