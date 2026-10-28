@@ -87,7 +87,7 @@ export function EcranCercle({
         <EnTeteEcran
           icone={PhoneMissed}
           titre={cercle.length ? "Plus personne à appeler" : "Aucun proche à appeler"}
-          texte={`${personne} sera rappelé(e) plus tard. Si plus personne ne répond, l'équipe du CCAS prendra le relais.`}
+          texte={`${personne} sera ${personne.startsWith("Mme") ? "rappelée" : "rappelé"} plus tard. Si plus personne ne répond, l'équipe du CCAS prendra le relais.`}
         />
         <Button size="lg" className="h-14 text-lg" onClick={onTerminer}>
           Terminer

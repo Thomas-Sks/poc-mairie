@@ -31,7 +31,7 @@ import type { EcranAppel as DonneesAppel } from "../application/appel";
 import { besoinsPreselectionnes } from "../domain/besoins";
 import type { ResultatAppel } from "../domain/resultats";
 import { estPreoccupante, evaluerReponses, type Reponse, type Reponses } from "../domain/questions";
-import { nomPrononce } from "../domain/script";
+import { accorder, nomPrononce } from "../domain/script";
 import { libererVerrouAction, prendreVerrouAction } from "./actions";
 import { BoutonAppeler, EcranBesoin, EcranCercle, EcranDanger, EcranTermine, lienTel } from "./ecrans-suite";
 import { envoyerOuMettreEnFile, type IssueEnvoiClient } from "./file-attente";
@@ -44,12 +44,16 @@ type Etape =
   | { nom: "danger"; consigne: string | null; precision: string }
   | { nom: "termine"; message: string };
 
+/** « Absent(e) (n'est pas chez lui/elle) » accordé au genre de la personne appelée. */
+const libelleBouton = (libelle: string, feminin: boolean) =>
+  accorder(libelle, feminin ? "Mme" : "M.").replace("lui/elle", feminin ? "elle" : "lui");
+
 const BOUTONS: { resultat: ResultatAppel; libelle: string; icone: LucideIcon }[] = [
   { resultat: "tout_va_bien", libelle: "Joint – tout va bien", icone: CircleCheck },
   { resultat: "besoin", libelle: "Joint – a besoin de quelque chose", icone: HandHelping },
   { resultat: "ne_repond_pas", libelle: "Ne répond pas", icone: PhoneMissed },
   { resultat: "mauvais_numero", libelle: "Mauvais numéro", icone: PhoneOff },
-  { resultat: "absent", libelle: "Absent (n'est pas chez lui)", icone: DoorClosed },
+  { resultat: "absent", libelle: "Absent(e) (n'est pas chez lui/elle)", icone: DoorClosed },
   { resultat: "evacuation", libelle: "Doit quitter son logement", icone: House },
   { resultat: "danger", libelle: "Danger – urgence", icone: Siren },
 ];
@@ -370,7 +374,7 @@ export function EcranAppel({ donnees }: { donnees: DonneesAppel }) {
                     onClick={() => aller({ nom: "danger", consigne: b.consigne, precision: b.libelle })}
                   >
                     <Siren className="size-6 shrink-0" aria-hidden />
-                    {b.libelle}
+                    {libelleBouton(b.libelle, feminin)}
                   </Button>
                 ))}
               </div>

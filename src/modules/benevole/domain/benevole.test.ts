@@ -15,7 +15,7 @@ import {
   type ResultatAppel,
   type ResultatProche,
 } from "./resultats";
-import { nomPrononce, rendreTexte } from "./script";
+import { accorder, nomPrononce, rendreTexte } from "./script";
 
 const VARIABLES = {
   civilite: "Mme",
@@ -249,5 +249,12 @@ describe("E10-US8 file hors connexion", () => {
     expect(messageFile(1, true)).toBe("Envoi en cours – 1 résultat en attente");
     expect(messageFile(0, false)).toBe("Hors connexion");
     expect(messageFile(0, true)).toBeNull();
+  });
+});
+
+describe("accord au genre", () => {
+  it("accorde « inscrit(e) » selon la civilité", () => {
+    expect(accorder("Vous êtes inscrit(e) sur le Plan", "Mme")).toBe("Vous êtes inscrite sur le Plan");
+    expect(accorder("Vous êtes inscrit(e) sur le Plan", "M.")).toBe("Vous êtes inscrit sur le Plan");
   });
 });
