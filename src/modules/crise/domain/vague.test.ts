@@ -40,6 +40,25 @@ describe("genererVague", () => {
     expect(c).toMatchObject({ exclue: true, statut: "couvert_passage", couverture: "passage", motifExclusion: "Couvert par passage ADMR Lomme à 09h00" });
   });
 
+  it("en inondation ou tempête, un passage prévu n'exclut pas la personne (elle reste à appeler)", () => {
+    const faits = { passages: [{ libelle: "ADMR Lomme", joursSemaine: [3], heureDebut: "09:00", exceptions: [] }], indisponibilites: [], statutDuJour: null };
+    for (const type of ["inondation", "tempete"] as const) {
+      const [c] = genererVague([benef("a", { faits })], JOUR, "humain", type);
+      expect(c).toMatchObject({ exclue: false, statut: "a_appeler", couverture: null });
+    }
+    expect(genererVague([benef("a", { faits })], JOUR, "humain", "grand_froid")[0].exclue).toBe(true);
+  });
+
+  it("en inondation, une absence déclarée exclut toujours", () => {
+    const [c] = genererVague(
+      [benef("a", { faits: { passages: [], indisponibilites: [{ libelle: "Vacances", debut: "2026-10-20", fin: null }], statutDuJour: null } })],
+      JOUR,
+      "humain",
+      "inondation",
+    );
+    expect(c).toMatchObject({ exclue: true, couverture: "absence" });
+  });
+
   it("n'exclut pas un passage prévu un autre jour", () => {
     const [c] = genererVague(
       [benef("a", { faits: { passages: [{ libelle: "ADMR", joursSemaine: [2, 4], heureDebut: "09:00", exceptions: [] }], indisponibilites: [], statutDuJour: null } })],

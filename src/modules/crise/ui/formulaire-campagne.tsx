@@ -204,7 +204,7 @@ export function FormulaireCampagne(props: Props) {
         <p className="border-t pt-4 text-lg" aria-live="polite">
           <span className="font-bold tabular">{nb ?? "…"}</span> personne{(nb ?? 0) > 1 ? "s" : ""} concernée{(nb ?? 0) > 1 ? "s" : ""}
           <span className="block text-base text-muted-foreground">
-            La liste est figée au lancement. Les personnes couvertes par un passage d&apos;intervenant ou absentes sont exclues automatiquement, avec le motif.
+            La liste est figée au lancement. Les personnes absentes sont exclues automatiquement, avec le motif{localise ? "" : ", ainsi que celles qui ont un passage d'intervenant prévu ce jour-là"}.{localise && " Pour une inondation ou une tempête, un passage prévu ne suffit pas : ces personnes restent à appeler."}
           </span>
         </p>
       </Surface>

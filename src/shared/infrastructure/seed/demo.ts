@@ -386,7 +386,8 @@ export async function reinitialiserDemo(db: Db, jour: DateISO = aujourdhui()) {
           const proche = relation === "voisin" || chance(0.6);
           return {
             communeId,
-            prenom: faker.person.firstName(),
+            // Le premier proche à appeler est une fille (scénario §10.4-4 : « appel de sa fille »).
+            prenom: faker.person.firstName(relation === "enfant" && k === 0 ? "female" : undefined),
             nom: relation === "enfant" && k === 0 ? membres[0].nom : faker.person.lastName().toUpperCase(),
             telephone: telMobile(),
             ville: proche ? pick(VILLES_PROCHES) : pick(VILLES_LOIN),

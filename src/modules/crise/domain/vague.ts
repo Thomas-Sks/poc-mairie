@@ -2,9 +2,9 @@
  * Génération de la vague du jour d'une campagne (E9-US2, E9-US4, RG-02, RG-05, E5-US2, E6-US3).
  * Fonctions pures : la base est lue et écrite par l'infrastructure.
  */
-import { comparerOrdreAppel, evaluerExclusion, type FaitsExclusion } from "@/shared/domain/campagne";
+import { comparerOrdreAppel, evaluerExclusion, passagesCouvrent, type FaitsExclusion } from "@/shared/domain/campagne";
 import { ecartEnJours, type DateISO } from "@/shared/domain/dates";
-import type { Canal, Couverture, Frequence, NiveauPriorite, StatutCible } from "@/shared/domain/vocabulaire";
+import type { Canal, Couverture, Frequence, NiveauPriorite, StatutCible, TypeCampagne } from "@/shared/domain/vocabulaire";
 import { attribuerMaquetteIa, type MaquetteIa } from "./maquette-ia";
 
 export type BeneficiaireVague = {
@@ -43,9 +43,15 @@ export const eligibleIa = (b: Pick<BeneficiaireVague, "consentementIa" | "iaActi
  * Construit la vague du jour : exclusions automatiques RG-05 (motif conservé), tri RG-02,
  * et, pour une campagne mixte ou IA, attribution déterministe des cibles IA fictives (maquette E11).
  */
-export function genererVague(beneficiaires: BeneficiaireVague[], jour: DateISO, canalCampagne: Canal): CibleGeneree[] {
+export function genererVague(
+  beneficiaires: BeneficiaireVague[],
+  jour: DateISO,
+  canalCampagne: Canal,
+  typeCampagne: TypeCampagne = "canicule",
+): CibleGeneree[] {
+  const options = { passagesCouvrent: passagesCouvrent(typeCampagne) };
   const tries = trierOrdreAppel(beneficiaires);
-  const incluses = tries.filter((b) => !evaluerExclusion(b.faits, jour));
+  const incluses = tries.filter((b) => !evaluerExclusion(b.faits, jour, options));
   const idsIa = new Set(
     canalCampagne === "humain"
       ? []
@@ -58,7 +64,7 @@ export function genererVague(beneficiaires: BeneficiaireVague[], jour: DateISO, 
   const maquettes = attribuerMaquetteIa([...idsIa]);
 
   return tries.map((b, i) => {
-    const exclusion = evaluerExclusion(b.faits, jour);
+    const exclusion = evaluerExclusion(b.faits, jour, options);
     if (exclusion) {
       return {
         beneficiaireId: b.id,

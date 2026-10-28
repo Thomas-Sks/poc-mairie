@@ -142,7 +142,7 @@ export async function creerCampagne(deps: Deps, ctx: Contexte, entree: EntreeCam
 /** E9-US4 : génère la vague du jour (une seule fois) puis enregistre les appels IA fictifs (maquette E11). */
 async function assurerVague(deps: Deps, ctx: Contexte, campagne: Campagne, jour: DateISO) {
   if (!vagueDueLe(campagne, jour)) return;
-  const creees = await deps.depot.genererVagueSiAbsente(campagne, jour, (beneficiaires) => genererVague(beneficiaires, jour, campagne.canal));
+  const creees = await deps.depot.genererVagueSiAbsente(campagne, jour, (beneficiaires) => genererVague(beneficiaires, jour, campagne.canal, campagne.type));
   const ia = creees.filter((c) => c.generee.maquetteIa?.detail);
   for (const c of ia) {
     const m = c.generee.maquetteIa!;

@@ -3,7 +3,7 @@
  * verrou d'appel (E8-US7). Fonctions pures.
  */
 import { jourDeSemaine, type DateISO } from "./dates";
-import type { Couverture, NiveauPriorite, StatutCible, Ton } from "./vocabulaire";
+import type { Couverture, NiveauPriorite, StatutCible, Ton, TypeCampagne } from "./vocabulaire";
 
 /** RG-03 : statuts terminaux pour la vague du jour. */
 export const STATUTS_TERMINAUX: ReadonlySet<StatutCible> = new Set([
@@ -131,13 +131,23 @@ export type FaitsExclusion = {
 
 export type Exclusion = { couverture: Couverture; motif: string; statut: StatutCible } | null;
 
+/**
+ * Un passage d'intervenant couvre-t-il la personne pour ce type de campagne ?
+ * Oui pour une canicule ou un grand froid (l'intervenant voit la personne chez elle).
+ * Non pour une inondation ou une tempête : la situation peut changer dans la journée,
+ * un passage prévu ne garantit pas que la personne soit en sécurité (décision client du 28/10/2026).
+ */
+export function passagesCouvrent(type: TypeCampagne): boolean {
+  return type !== "inondation" && type !== "tempete";
+}
+
 /** RG-05 : un bénéficiaire est exclu de la vague du jour s'il est déjà couvert. */
-export function evaluerExclusion(faits: FaitsExclusion, jour: DateISO): Exclusion {
+export function evaluerExclusion(faits: FaitsExclusion, jour: DateISO, options: { passagesCouvrent: boolean } = { passagesCouvrent: true }): Exclusion {
   const indispo = faits.indisponibilites.find((i) => indisponibleLe(i, jour));
   if (indispo) return { couverture: "absence", motif: `Absent : ${indispo.libelle}`, statut: "absent" };
 
   const passage = faits.passages
-    .filter((p) => passagePrevuLe(p, jour))
+    .filter((p) => options.passagesCouvrent && passagePrevuLe(p, jour))
     .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut))[0];
   if (passage) {
     return {
