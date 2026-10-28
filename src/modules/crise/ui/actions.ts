@@ -1,11 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { obtenirContexte } from "@/shared/infrastructure/session";
 import { AccesRefuse } from "@/shared/domain/permissions";
 import { BESOINS, CANAUX, FREQUENCES, NIVEAUX_ALERTE, STATUTS_CIBLE, TYPES_ALERTE, TYPES_CAMPAGNE } from "@/shared/domain/vocabulaire";
 import { casDUsageCrise } from "../infrastructure";
+import { casDUsage as casDUsageRegistre } from "@/modules/registre/infrastructure";
+import { ALERTE_LIBELLES } from "@/shared/domain/vocabulaire";
+import { formaterDate, formaterDateHeure } from "@/shared/domain/dates";
 import { RESULTATS_APPEL, VerrouPris } from "../application";
 import { filtreGeographiqueSchema } from "../domain/filtre-geographique";
 
@@ -182,4 +186,34 @@ export async function enregistrerResultatAction(entree: z.input<typeof resultatS
       smsSimules: r.smsSimules,
     };
   });
+}
+
+// ─── Depuis le tableau des bénéficiaires (E8-US8 « Ajouter à une campagne ») ──────
+
+/** Alertes en cours, pour rattacher une nouvelle campagne à la sélection du tableau. */
+export async function alertesEnCoursAction(): Promise<Reponse<{ alertes: { id: string; libelle: string }[] }>> {
+  return executer(async () => {
+    const ctx = await obtenirContexte();
+    const { enCours } = await casDUsageCrise.listerAlertes(ctx);
+    return {
+      alertes: enCours.map((a) => ({ id: a.id, libelle: `${ALERTE_LIBELLES[a.type]} · depuis le ${formaterDate(a.debut)}` })),
+    };
+  });
+}
+
+/** Fige la sélection en liste puis ouvre la création de campagne sur cette liste. */
+export async function campagneDepuisSelectionAction(entree: { alerteId: string; ids: string[] }): Promise<Reponse> {
+  const { alerteId, ids } = z.object({ alerteId: id, ids: z.array(id).min(1) }).parse(entree);
+  const resultat = await executer(async () => {
+    const ctx = await obtenirContexte();
+    const listeId = await casDUsageRegistre.creerListe(ctx, {
+      nom: `Sélection du ${formaterDateHeure(ctx.maintenant)}`,
+      type: "figee",
+      filtre: { version: 1, ids },
+      ids,
+    });
+    return { listeId };
+  });
+  if (!resultat.ok) return resultat;
+  redirect(`/alertes/${alerteId}/campagne?liste=${resultat.listeId}`);
 }

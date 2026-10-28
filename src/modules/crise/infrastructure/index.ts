@@ -2,10 +2,10 @@ import "server-only";
 import type { Contexte } from "@/shared/application/contexte";
 import * as cas from "../application";
 import { depotCriseDrizzle } from "./depot-crise-drizzle";
-import { selecteurProvisoire } from "./selecteur-provisoire";
+import { selecteurRegistre } from "./selecteur-registre";
 
 const depot = depotCriseDrizzle;
-const deps = { depot, selecteur: selecteurProvisoire };
+const deps = { depot, selecteur: selecteurRegistre };
 
 type Entree<F extends (...args: never[]) => unknown> = Parameters<F>[2];
 

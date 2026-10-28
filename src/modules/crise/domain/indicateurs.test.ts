@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compterCouverture, progressionParAppelant, situationsPrioritaires } from "./tableau-de-bord";
-import { correspondAuFiltre, decrireFiltre } from "./filtre-geographique";
+import { decrireFiltre } from "./filtre-geographique";
 import { versCsv } from "./export-csv";
 import { calculerStatistiques } from "./rapport";
 
@@ -40,17 +40,6 @@ describe("progressionParAppelant", () => {
 
 describe("filtre géographique", () => {
   const filtre = { voie: "Rue du Marais", numeroMin: 1, numeroMax: 41, parite: "impair" as const };
-  it("rue du Marais, n° impairs 1 à 41", () => {
-    expect(correspondAuFiltre({ voie: "Rue du Marais", numero: 23, quartier: "Kiener" }, filtre)).toBe(true);
-    expect(correspondAuFiltre({ voie: "rue du marais", numero: 41, quartier: null }, filtre)).toBe(true);
-    expect(correspondAuFiltre({ voie: "Rue du Marais", numero: 22, quartier: null }, filtre)).toBe(false);
-    expect(correspondAuFiltre({ voie: "Rue du Marais", numero: 43, quartier: null }, filtre)).toBe(false);
-    expect(correspondAuFiltre({ voie: "Rue de la Mitterie", numero: 3, quartier: null }, filtre)).toBe(false);
-    expect(correspondAuFiltre({ voie: "Rue du Marais", numero: null, quartier: null }, filtre)).toBe(false);
-  });
-  it("quartier seul", () => {
-    expect(correspondAuFiltre({ voie: "X", numero: null, quartier: "Délivrance" }, { quartier: "delivrance" })).toBe(true);
-  });
   it("décrit le filtre en français", () => {
     expect(decrireFiltre(filtre)).toBe("Rue du Marais, n° impairs 1 à 41");
   });

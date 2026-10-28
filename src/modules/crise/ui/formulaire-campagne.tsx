@@ -26,6 +26,8 @@ type Props = {
   quartiers: string[];
   membres: { id: string; prenom: string; nom: string; role: Role }[];
   nbActifs: number;
+  /** Liste présélectionnée (ex. sélection venue du tableau des bénéficiaires). */
+  listeIdInitiale?: string;
 };
 
 type TypeSource = "tous" | "liste" | "filtre";
@@ -40,8 +42,8 @@ export function FormulaireCampagne(props: Props) {
   const localise = props.alerte.type === "inondation" || props.alerte.type === "tempete";
 
   // Qui appeler
-  const [typeSource, setTypeSource] = useState<TypeSource>(localise ? "filtre" : "tous");
-  const [listeId, setListeId] = useState(props.listes[0]?.id ?? "");
+  const [typeSource, setTypeSource] = useState<TypeSource>(props.listeIdInitiale ? "liste" : localise ? "filtre" : "tous");
+  const [listeId, setListeId] = useState(props.listeIdInitiale ?? props.listes[0]?.id ?? "");
   const [voie, setVoie] = useState(localise && props.voies.includes("Rue du Marais") ? "Rue du Marais" : "");
   const [numeroMin, setNumeroMin] = useState(localise ? "1" : "");
   const [numeroMax, setNumeroMax] = useState(localise ? "41" : "");

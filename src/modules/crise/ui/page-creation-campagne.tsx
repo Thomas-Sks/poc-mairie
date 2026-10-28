@@ -10,7 +10,7 @@ import { NIVEAU_ALERTE_LIBELLES, NIVEAU_ALERTE_TONS } from "./libelles";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function PageCreationCampagne({ ctx, alerteId }: { ctx: Contexte; alerteId: string }) {
+export async function PageCreationCampagne({ ctx, alerteId, listeIdInitiale }: { ctx: Contexte; alerteId: string; listeIdInitiale?: string }) {
   if (!UUID.test(alerteId)) notFound();
   const donnees = await casDUsageCrise.preparerCampagne(ctx, { alerteId });
   if (!donnees) notFound();
@@ -40,6 +40,7 @@ export async function PageCreationCampagne({ ctx, alerteId }: { ctx: Contexte; a
           quartiers={donnees.quartiers}
           membres={donnees.membres}
           nbActifs={donnees.nbActifs}
+          listeIdInitiale={donnees.listes.some((l) => l.id === listeIdInitiale) ? listeIdInitiale : undefined}
         />
       )}
     </Page>

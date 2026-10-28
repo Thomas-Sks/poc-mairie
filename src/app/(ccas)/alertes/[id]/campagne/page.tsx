@@ -4,8 +4,9 @@ import { PageCreationCampagne } from "@/modules/crise/ui/page-creation-campagne"
 
 export const metadata: Metadata = { title: "Nouvelle campagne d'appels" };
 
-export default async function NouvelleCampagne({ params }: PageProps<"/alertes/[id]/campagne">) {
+export default async function NouvelleCampagne({ params, searchParams }: PageProps<"/alertes/[id]/campagne">) {
   const ctx = await contexteAvec("campagnes.gerer");
   const { id } = await params;
-  return <PageCreationCampagne ctx={ctx} alerteId={id} />;
+  const { liste } = await searchParams;
+  return <PageCreationCampagne ctx={ctx} alerteId={id} listeIdInitiale={typeof liste === "string" ? liste : undefined} />;
 }
