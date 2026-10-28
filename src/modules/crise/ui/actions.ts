@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { obtenirContexte } from "@/shared/infrastructure/session";
-import { AccesRefuse } from "@/shared/domain/permissions";
+import { AccesRefuse, peut } from "@/shared/domain/permissions";
 import { BESOINS, CANAUX, FREQUENCES, NIVEAUX_ALERTE, STATUTS_CIBLE, TYPES_ALERTE, TYPES_CAMPAGNE } from "@/shared/domain/vocabulaire";
 import { casDUsageCrise } from "../infrastructure";
 import { casDUsage as casDUsageRegistre } from "@/modules/registre/infrastructure";
@@ -191,19 +191,23 @@ export async function enregistrerResultatAction(entree: z.input<typeof resultatS
 // ─── Depuis le tableau des bénéficiaires (E8-US8 « Ajouter à une campagne ») ──────
 
 /** Alertes en cours, pour rattacher une nouvelle campagne à la sélection du tableau. */
-export async function alertesEnCoursAction(): Promise<Reponse<{ alertes: { id: string; libelle: string }[] }>> {
+export async function alertesEnCoursAction(): Promise<Reponse<{ alertes: { id: string; libelle: string }[]; peutDeclencher: boolean }>> {
   return executer(async () => {
     const ctx = await obtenirContexte();
     const { enCours } = await casDUsageCrise.listerAlertes(ctx);
     return {
       alertes: enCours.map((a) => ({ id: a.id, libelle: `${ALERTE_LIBELLES[a.type]} · depuis le ${formaterDate(a.debut)}` })),
+      peutDeclencher: peut(ctx.utilisateur.role, "alertes.declencher"),
     };
   });
 }
 
-/** Fige la sélection en liste puis ouvre la création de campagne sur cette liste. */
+/**
+ * Fige la sélection en liste puis ouvre la création de campagne sur cette liste.
+ * `alerteId: "nouvelle"` passe d'abord par le déclenchement d'une alerte (ex. inondation localisée), sans perdre la sélection.
+ */
 export async function campagneDepuisSelectionAction(entree: { alerteId: string; ids: string[] }): Promise<Reponse> {
-  const { alerteId, ids } = z.object({ alerteId: id, ids: z.array(id).min(1) }).parse(entree);
+  const { alerteId, ids } = z.object({ alerteId: z.union([id, z.literal("nouvelle")]), ids: z.array(id).min(1) }).parse(entree);
   const resultat = await executer(async () => {
     const ctx = await obtenirContexte();
     const listeId = await casDUsageRegistre.creerListe(ctx, {
@@ -215,5 +219,5 @@ export async function campagneDepuisSelectionAction(entree: { alerteId: string; 
     return { listeId };
   });
   if (!resultat.ok) return resultat;
-  redirect(`/alertes/${alerteId}/campagne?liste=${resultat.listeId}`);
+  redirect(alerteId === "nouvelle" ? `/alertes/nouvelle?liste=${resultat.listeId}` : `/alertes/${alerteId}/campagne?liste=${resultat.listeId}`);
 }

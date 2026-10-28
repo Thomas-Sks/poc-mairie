@@ -112,6 +112,9 @@ export type DetailAppelIa = InteractionVue & {
 
 export type ModificationVue = { id: string; champ: string; ancienneValeur: string | null; nouvelleValeur: string | null; at: Date; auteur: string | null };
 
+/** Note libre rattachée à la fiche (ex. colonnes « fourre-tout » d'un import Excel, E15-US3). */
+export type NoteFicheVue = { id: string; texte: string; source: string; at: Date; auteur: string | null };
+
 export type RappelVue = { id: string; objet: string; echeance: DateISO; assigne: string | null; urgent: boolean; faitLe: Date | null; type: string };
 
 export type IndisponibiliteVue = {
@@ -164,6 +167,7 @@ export interface SuiviRepository {
   appelIa(communeId: string, beneficiaireId: string, interactionId: string): Promise<DetailAppelIa | null>;
   modifications(communeId: string, beneficiaireId: string): Promise<ModificationVue[]>;
   rappels(communeId: string, beneficiaireId: string): Promise<RappelVue[]>;
+  notes(communeId: string, beneficiaireId: string): Promise<NoteFicheVue[]>;
   indisponibilites(communeId: string, beneficiaireId: string): Promise<IndisponibiliteVue[]>;
   cibleActive(communeId: string, beneficiaireId: string, jour: DateISO): Promise<CibleActive | null>;
   /** Enregistre l'interaction et, s'il y en a un, le rappel de suivi, de façon atomique. */

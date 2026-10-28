@@ -7,16 +7,21 @@ import { LienRetour } from "@/modules/crise/ui/lien-retour";
 
 export const metadata: Metadata = { title: "Déclencher une alerte" };
 
-export default async function NouvelleAlerte() {
+export default async function NouvelleAlerte({ searchParams }: PageProps<"/alertes/nouvelle">) {
   const ctx = await contexteAvec("alertes.declencher");
+  const { liste } = await searchParams;
   return (
     <Page>
       <EnTetePage
         retour={<LienRetour href="/alertes">Alertes et campagnes</LienRetour>}
         titre="Déclencher une alerte"
-        description="Après le déclenchement, vous choisirez les personnes à appeler et l'équipe mobilisée."
+        description={
+          liste
+            ? "Après le déclenchement, la campagne d'appels portera sur les personnes sélectionnées dans le tableau."
+            : "Après le déclenchement, vous choisirez les personnes à appeler et l'équipe mobilisée."
+        }
       />
-      <FormulaireAlerte aujourdhui={aujourdhui(ctx.maintenant)} />
+      <FormulaireAlerte aujourdhui={aujourdhui(ctx.maintenant)} listeId={typeof liste === "string" ? liste : undefined} />
     </Page>
   );
 }

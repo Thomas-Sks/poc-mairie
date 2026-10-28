@@ -97,12 +97,13 @@ export async function marquerRappelFait(deps: Pick<DepsBeneficiaires, "suivi">, 
 
 export async function consulterJournal(deps: Pick<DepsBeneficiaires, "suivi">, ctx: Contexte, e: { beneficiaireId: string }) {
   exiger(ctx.utilisateur.role, "fiches.lire");
-  const [interactions, modifications, rappels] = await Promise.all([
+  const [interactions, modifications, rappels, notes] = await Promise.all([
     deps.suivi.interactions(ctx.commune.id, e.beneficiaireId),
     deps.suivi.modifications(ctx.commune.id, e.beneficiaireId),
     deps.suivi.rappels(ctx.commune.id, e.beneficiaireId),
+    deps.suivi.notes(ctx.commune.id, e.beneficiaireId),
   ]);
-  return { interactions, modifications, rappels };
+  return { interactions, modifications, rappels, notes };
 }
 
 export async function consulterAppelIa(deps: Pick<DepsBeneficiaires, "suivi">, ctx: Contexte, e: { beneficiaireId: string; interactionId: string }) {

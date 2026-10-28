@@ -71,3 +71,14 @@ export const formaterDate = (d: DateISO) => FORMAT_COURT.format(new Date(`${d}T0
 export const formaterHeure = (d: Date) => FORMAT_HEURE.format(d);
 /** « 14/10/2026 09:30 » */
 export const formaterDateHeure = (d: Date) => FORMAT_DATE_HEURE.format(d);
+
+/** Recule de N mois (le 31 devient le dernier jour du mois s'il est plus court). */
+export function retirerMois(date: DateISO, mois: number): DateISO {
+  const [an, m, j] = date.split("-").map(Number);
+  const total = an * 12 + (m - 1) - mois;
+  const nouvelAn = Math.floor(total / 12);
+  const nouveauMois = (total % 12) + 1;
+  const dernierJour = new Date(Date.UTC(nouvelAn, nouveauMois, 0)).getUTCDate();
+  const jourFinal = Math.min(j, dernierJour);
+  return `${String(nouvelAn).padStart(4, "0")}-${String(nouveauMois).padStart(2, "0")}-${String(jourFinal).padStart(2, "0")}`;
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   basculerValeur,
   bornesNaissance,
+  dateLimiteVerification,
   decrireFiltre,
   deserialiserFiltre,
   distanceMetres,
@@ -177,5 +178,23 @@ describe("puces de filtres actifs", () => {
     const f = basculerValeur(FILTRE_VIDE, "niveaux", "P1");
     expect(f.niveaux).toEqual(["P1"]);
     expect(basculerValeur(f, "niveaux", "P1").niveaux).toBeUndefined();
+  });
+});
+
+describe("fiches non vérifiées (lien « fiches à revérifier » de l'accueil)", () => {
+  it("valide, conserve et décrit le critère", () => {
+    const r = validerFiltre({ version: 1, nonVerifieeDepuisMois: 12 });
+    expect(r.ok && r.filtre.nonVerifieeDepuisMois).toBe(12);
+    expect(decrireFiltre({ version: 1, nonVerifieeDepuisMois: 12 })).toEqual([{ cle: "nonVerifieeDepuisMois", libelle: "Fiche non vérifiée depuis 12 mois" }]);
+    expect(retirerCritere({ version: 1, nonVerifieeDepuisMois: 12 }, "nonVerifieeDepuisMois")).toEqual({ version: 1 });
+  });
+
+  it("refuse une durée hors bornes", () => {
+    expect(validerFiltre({ version: 1, nonVerifieeDepuisMois: 0 }).ok).toBe(false);
+  });
+
+  it("calcule la date limite en mois calendaires", () => {
+    expect(dateLimiteVerification(12, "2026-10-28")).toBe("2025-10-28");
+    expect(dateLimiteVerification(1, "2026-03-31")).toBe("2026-02-28");
   });
 });

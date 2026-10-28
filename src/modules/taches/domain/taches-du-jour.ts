@@ -3,7 +3,7 @@
  * Rappels du jour et en retard, anniversaires à venir (E4-US1), fiches à revérifier (E1-US5)
  * et contacts dus selon la fréquence cible (E4-US4).
  */
-import { ajouterJours, ecartEnJours, estAnniversaireRond, prochainAnniversaire, type DateISO } from "@/shared/domain/dates";
+import { ajouterJours, ecartEnJours, estAnniversaireRond, prochainAnniversaire, retirerMois, type DateISO } from "@/shared/domain/dates";
 import type { TypeRappel } from "@/shared/domain/vocabulaire";
 
 // ─── Rappels ──────────────────────────────────────────────────────────────────
@@ -82,15 +82,7 @@ export function anniversairesAVenir(personnes: PersonneSuivie[], jour: DateISO, 
 }
 
 /** Retire `mois` mois à une date ISO (le jour est ramené au dernier jour du mois si besoin). */
-export function retirerMois(date: DateISO, mois: number): DateISO {
-  const [an, m, j] = date.split("-").map(Number);
-  const total = an * 12 + (m - 1) - mois;
-  const nouvelAn = Math.floor(total / 12);
-  const nouveauMois = (total % 12) + 1;
-  const dernierJour = new Date(Date.UTC(nouvelAn, nouveauMois, 0)).getUTCDate();
-  const jourFinal = Math.min(j, dernierJour);
-  return `${String(nouvelAn).padStart(4, "0")}-${String(nouveauMois).padStart(2, "0")}-${String(jourFinal).padStart(2, "0")}`;
-}
+export { retirerMois };
 
 export type FicheAReverifier = { personne: PersonneSuivie; depuis: DateISO };
 
@@ -137,6 +129,8 @@ export type TachesDuJour = {
   rappels: RappelDuJour[];
   anniversaires: AnniversaireAVenir[];
   fichesAReverifier: FicheAReverifier[];
+  /** Seuil utilisé pour les fiches à revérifier (lien vers la liste complète du registre). */
+  verificationMois: number;
   contactsDus: ContactDu[];
 };
 
@@ -149,6 +143,7 @@ export function selectionnerTachesDuJour(
     rappels: selectionnerRappels(entree.rappels, jour),
     anniversaires: anniversairesAVenir(entree.personnes, jour, entree.parametres.anniversaireJoursAvant),
     fichesAReverifier: fichesAReverifier(entree.personnes, jour, entree.parametres.verificationMois),
+    verificationMois: entree.parametres.verificationMois,
     contactsDus: contactsDus(entree.personnes, jour),
   };
 }

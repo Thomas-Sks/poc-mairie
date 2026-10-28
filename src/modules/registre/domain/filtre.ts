@@ -20,7 +20,7 @@ import {
   type Sexe,
   type StatutFiche,
 } from "@/shared/domain/vocabulaire";
-import { ajouterJours, type DateISO } from "@/shared/domain/dates";
+import { ajouterJours, retirerMois, type DateISO } from "@/shared/domain/dates";
 
 export const VERSION_FILTRE = 1;
 
@@ -65,6 +65,8 @@ export type Filtre = {
   /** Au moins un des tags. */
   tags?: string[];
   dernierContact?: DernierContact;
+  /** E1-US5 : fiche non vérifiée depuis plus de N mois (à défaut de vérification, depuis l'inscription). */
+  nonVerifieeDepuisMois?: number;
   /** Indisponibilité en cours aujourd'hui (vacances, hospitalisation…). */
   indisponible?: boolean;
   /** Assigné à l'un de ces utilisateurs (E8-US6). */
@@ -114,6 +116,7 @@ export const schemaFiltre = z.object({
   statuts: z.array(z.enum(STATUTS_FICHE)).optional(),
   tags: z.array(z.string().trim().min(1).max(100)).optional(),
   dernierContact: z.object({ sens: z.enum(["moins_de", "plus_de"]), jours: z.number().int().min(1).max(3650) }).optional(),
+  nonVerifieeDepuisMois: z.number().int().min(1).max(120).optional(),
   indisponible: z.boolean().optional(),
   assignesA: z.array(z.uuid()).optional(),
   rues: z.array(schemaRue).max(50).optional(),
@@ -157,6 +160,7 @@ export function normaliserFiltre(filtre: Filtre): Filtre {
   const tags = multi(filtre.tags);
   if (tags) f.tags = tags;
   if (filtre.dernierContact) f.dernierContact = { ...filtre.dernierContact };
+  if (filtre.nonVerifieeDepuisMois !== undefined) f.nonVerifieeDepuisMois = filtre.nonVerifieeDepuisMois;
   if (filtre.indisponible !== undefined) f.indisponible = filtre.indisponible;
   const assignes = multi(filtre.assignesA);
   if (assignes) f.assignesA = assignes;
@@ -241,6 +245,11 @@ export function dateLimiteContact(dc: DernierContact, jour: DateISO): DateISO {
   return ajouterJours(jour, -dc.jours);
 }
 
+/** Date limite pour le critère « fiche non vérifiée depuis N mois ». */
+export function dateLimiteVerification(mois: number, jour: DateISO): DateISO {
+  return retirerMois(jour, mois);
+}
+
 /** Un numéro de voie satisfait-il le critère de rue (plage + côté) ? */
 export function numeroCorrespond(rue: FiltreRue, numero: number | null): boolean {
   const sansPlage = rue.numeroMin === undefined && rue.numeroMax === undefined && rue.cote === "tous";
@@ -309,6 +318,7 @@ export type CleCritere =
   | "statuts"
   | "tags"
   | "dernierContact"
+  | "nonVerifieeDepuisMois"
   | "indisponible"
   | "assignesA"
   | "quartiers"
@@ -355,6 +365,7 @@ export function decrireFiltre(filtre: Filtre, noms: { utilisateurs?: Record<stri
   if (f.statuts) puces.push({ cle: "statuts", libelle: `Fiche ${enumerer(f.statuts.map((s) => STATUT_FICHE_LIBELLES[s].toLowerCase()))}` });
   if (f.tags) puces.push({ cle: "tags", libelle: `Tag : ${enumerer(f.tags)}` });
   if (f.dernierContact) puces.push({ cle: "dernierContact", libelle: libelleDernierContact(f.dernierContact) });
+  if (f.nonVerifieeDepuisMois !== undefined) puces.push({ cle: "nonVerifieeDepuisMois", libelle: `Fiche non vérifiée depuis ${f.nonVerifieeDepuisMois} mois` });
   if (f.indisponible !== undefined) puces.push({ cle: "indisponible", libelle: ouiNon(f.indisponible, "Indisponible en ce moment", "Disponible en ce moment") });
   if (f.assignesA) {
     const n = f.assignesA.map((id) => noms.utilisateurs?.[id] ?? "Utilisateur inconnu");

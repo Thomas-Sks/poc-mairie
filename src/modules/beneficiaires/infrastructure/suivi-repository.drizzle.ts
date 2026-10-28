@@ -9,6 +9,7 @@ import {
   historiqueModifications,
   indisponibilites,
   interactions,
+  notesFiche,
   rappels,
   utilisateurs,
 } from "@/shared/infrastructure/db/schema";
@@ -83,6 +84,15 @@ export const suiviRepositoryDrizzle: SuiviRepository = {
       .leftJoin(utilisateurs, eq(utilisateurs.id, historiqueModifications.auteurId))
       .where(and(eq(historiqueModifications.beneficiaireId, beneficiaireId), appartient(communeId, beneficiaireId)))
       .orderBy(desc(historiqueModifications.at));
+  },
+
+  async notes(communeId, beneficiaireId) {
+    return db
+      .select({ id: notesFiche.id, texte: notesFiche.texte, source: notesFiche.source, at: notesFiche.createdAt, auteur: nomUtilisateur })
+      .from(notesFiche)
+      .leftJoin(utilisateurs, eq(utilisateurs.id, notesFiche.auteurId))
+      .where(and(eq(notesFiche.beneficiaireId, beneficiaireId), appartient(communeId, beneficiaireId)))
+      .orderBy(desc(notesFiche.createdAt));
   },
 
   async rappels(communeId, beneficiaireId) {

@@ -5,7 +5,7 @@
 import { and, arrayOverlaps, asc, desc, eq, gte, inArray, isNotNull, lte, ne, or, sql, type SQL, type SQLWrapper } from "drizzle-orm";
 import type { DateISO } from "@/shared/domain/dates";
 import { beneficiaires as b, foyers as f } from "@/shared/infrastructure/db/schema";
-import { bornesNaissance, dateLimiteContact, rectangleEnglobant, type Filtre, type FiltreRue, type ZoneCarte } from "../domain/filtre";
+import { bornesNaissance, dateLimiteContact, dateLimiteVerification, rectangleEnglobant, type Filtre, type FiltreRue, type ZoneCarte } from "../domain/filtre";
 import type { Colonne, Tri } from "../domain/tableau";
 
 /** Niveau effectif : forcé manuellement (RG-01), sinon calculé. */
@@ -105,6 +105,10 @@ export function conditionsFiltre(filtre: Filtre, jour: DateISO): SQL | undefined
         ? sql`${dernierContactInstant} >= ${limite}::date`
         : sql`(${dernierContactInstant} is null or ${dernierContactInstant} < ${limite}::date)`,
     );
+  }
+  if (filtre.nonVerifieeDepuisMois !== undefined) {
+    const limite = dateLimiteVerification(filtre.nonVerifieeDepuisMois, jour);
+    c.push(sql`coalesce(${b.dateDerniereVerification}, ${b.dateInscription}) < ${limite}::date`);
   }
   if (filtre.indisponible !== undefined) c.push(filtre.indisponible ? indisponibleLe(jour) : sql`not ${indisponibleLe(jour)}`);
   if (filtre.assignesA) {

@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Contexte } from "@/shared/application/contexte";
-import { formaterDate, formaterDateLongue } from "@/shared/domain/dates";
+import { aujourdhui, formaterDate, formaterDateLongue } from "@/shared/domain/dates";
 import { EnTetePage, EtatVide, Page, Pastille, Section, Surface } from "@/shared/ui/elements";
 import { libelleDans, libelleRetard } from "../domain/taches-du-jour";
 import type { RappelVue, VueTaches } from "../application/obtenir-taches-du-jour";
@@ -145,10 +145,12 @@ export async function PageTaches({ ctx, equipe }: { ctx: Contexte; equipe: boole
               <Surface>
                 <ul className="divide-y">
                   {v.inscriptions.map((i) => (
-                    <li key={i.id} className="flex flex-col gap-0.5 px-5 py-3">
-                      <span className="font-semibold">{i.personnes.join(" et ") || "Inscription en ligne"}</span>
-                      <span className="text-sm text-muted-foreground">Reçue le {formaterDate(i.soumisLe.toISOString().slice(0, 10))}</span>
-                    </li>
+                    <LigneLien
+                      key={i.id}
+                      href={`/inscriptions/${i.id}`}
+                      titre={i.personnes.join(" et ") || "Inscription en ligne"}
+                      detail={`Reçue le ${formaterDate(aujourdhui(i.soumisLe))}`}
+                    />
                   ))}
                 </ul>
               </Surface>
@@ -210,9 +212,13 @@ export async function PageTaches({ ctx, equipe }: { ctx: Contexte; equipe: boole
                   ))}
                 </ul>
                 {fichesRestantes > 0 && (
-                  <p className="border-t px-5 py-3 text-sm text-muted-foreground">
-                    Et {pluriel(fichesRestantes, "autre fiche", "autres fiches")} à revérifier.
-                  </p>
+                  <Link
+                    href={`/beneficiaires?non-verifiee-depuis=${v.verificationMois}`}
+                    className="flex min-h-11 items-center justify-between gap-3 border-t px-5 py-3 font-medium text-primary hover:bg-muted"
+                  >
+                    Voir les {v.fichesAReverifier.length} fiches à revérifier
+                    <ChevronRight className="size-4" aria-hidden />
+                  </Link>
                 )}
               </Surface>
             </Section>

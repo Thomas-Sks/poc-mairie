@@ -4,6 +4,7 @@ import { formaterDate, formaterDateHeure, formaterDateLongue } from "@/shared/do
 import { ALERTE_LIBELLES, BESOIN_LIBELLES, STATUT_CIBLE_LIBELLES, type Besoin } from "@/shared/domain/vocabulaire";
 import { Bandeau, EnTetePage, Libelle, Page, Pastille, Section, Surface } from "@/shared/ui/elements";
 import { casDUsageCrise } from "../infrastructure";
+import { casDUsage as casDUsageRegistre } from "@/modules/registre/infrastructure";
 import { decrireSource } from "../application";
 import { tonStatut } from "../domain/tableau-de-bord";
 import { BoutonImprimer } from "./bouton-imprimer";
@@ -29,6 +30,7 @@ export async function PageRapport({ ctx, campagneId }: { ctx: Contexte; campagne
   const rapport = await casDUsageCrise.rapportCampagne(ctx, { campagneId });
   if (!rapport) notFound();
   const { campagne, stats, signalees } = rapport;
+  const listes = campagne.source.type === "liste" ? await casDUsageRegistre.listerListes(ctx) : [];
   const alerte = campagne.alerte;
   const periode = stats.vagues.length
     ? stats.vagues.length === 1
@@ -82,7 +84,7 @@ export async function PageRapport({ ctx, campagneId }: { ctx: Contexte; campagne
           <dt className="text-muted-foreground">Période</dt>
           <dd>{periode.charAt(0).toUpperCase() + periode.slice(1)}</dd>
           <dt className="text-muted-foreground">Personnes ciblées</dt>
-          <dd>{decrireSource(campagne.source)}</dd>
+          <dd>{decrireSource(campagne.source, listes)}</dd>
           <dt className="text-muted-foreground">Canal</dt>
           <dd>{CANAL_LIBELLES[campagne.canal]}</dd>
         </dl>

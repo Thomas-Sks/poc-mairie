@@ -1,16 +1,21 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { alertesEnCoursAction, campagneDepuisSelectionAction } from "./actions";
 
 type Proprietes = { ids: string[]; ouvert: boolean; fermer: () => void };
 
-/** « Ajouter à une campagne » depuis le tableau : crée une campagne sur la sélection, rattachée à une alerte en cours. */
+const NOUVELLE = "nouvelle";
+
+/**
+ * « Ajouter à une campagne » depuis le tableau : crée une campagne sur la sélection, rattachée à une alerte en cours
+ * ou à une nouvelle alerte (ex. inondation d'une rue), la sélection étant conservée pendant le déclenchement.
+ */
 export function FenetreAjoutCampagne({ ids, ouvert, fermer }: Proprietes) {
   const [alertes, setAlertes] = useState<{ id: string; libelle: string }[] | null>(null);
+  const [peutDeclencher, setPeutDeclencher] = useState(false);
   const [alerteId, setAlerteId] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, demarrer] = useTransition();
@@ -19,8 +24,10 @@ export function FenetreAjoutCampagne({ ids, ouvert, fermer }: Proprietes) {
     if (!ouvert) return;
     alertesEnCoursAction().then((r) => {
       const liste = r.ok ? r.alertes : [];
+      const declencher = r.ok && r.peutDeclencher;
       setAlertes(liste);
-      setAlerteId(liste[0]?.id ?? "");
+      setPeutDeclencher(declencher);
+      setAlerteId(liste[0]?.id ?? (declencher ? NOUVELLE : ""));
     });
   }, [ouvert]);
 
@@ -42,8 +49,8 @@ export function FenetreAjoutCampagne({ ids, ouvert, fermer }: Proprietes) {
         </DialogHeader>
         {alertes === null ? (
           <p className="text-muted-foreground">Chargement des alertes…</p>
-        ) : alertes.length === 0 ? (
-          <p>Aucune alerte n&apos;est en cours. Déclenchez d&apos;abord une alerte, puis revenez ici.</p>
+        ) : alertes.length === 0 && !peutDeclencher ? (
+          <p>Aucune alerte n&apos;est en cours. Demandez à un administrateur de déclencher l&apos;alerte, puis revenez ici.</p>
         ) : (
           <div className="flex flex-col gap-2">
             <label htmlFor="alerte-campagne" className="text-sm font-semibold">
@@ -60,6 +67,7 @@ export function FenetreAjoutCampagne({ ids, ouvert, fermer }: Proprietes) {
                   {a.libelle}
                 </option>
               ))}
+              {peutDeclencher && <option value={NOUVELLE}>Déclencher une nouvelle alerte (inondation, tempête…)</option>}
             </select>
           </div>
         )}
@@ -68,15 +76,9 @@ export function FenetreAjoutCampagne({ ids, ouvert, fermer }: Proprietes) {
           <Button variant="outline" onClick={fermer}>
             Annuler
           </Button>
-          {alertes?.length === 0 ? (
-            <Link href="/alertes/nouvelle" className={buttonVariants()}>
-              Déclencher une alerte
-            </Link>
-          ) : (
-            <Button onClick={valider} disabled={!alerteId || enCours}>
-              Préparer la campagne
-            </Button>
-          )}
+          <Button onClick={valider} disabled={!alerteId || enCours}>
+            {alerteId === NOUVELLE ? "Déclencher l'alerte" : "Préparer la campagne"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

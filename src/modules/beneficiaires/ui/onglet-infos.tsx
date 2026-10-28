@@ -37,19 +37,20 @@ function Renseignees({ items, className }: { items: { libelle: string; valeur: R
   return remplis.length ? <Proprietes items={remplis} className={className} /> : <p className="text-muted-foreground">Rien de renseigné.</p>;
 }
 
+/** Rubrique d'une colonne : les rubriques partagent une seule surface, séparées par un filet (pas de cartes empilées). */
 function Bloc({ titre, actions, children }: { titre: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
-    <Surface className="p-5 sm:p-6">
+    <div className="p-5 sm:p-6">
       <Section titre={titre} actions={actions}>
         {children}
       </Section>
-    </Surface>
+    </div>
   );
 }
 
 export async function OngletInfos({ id }: { id: string }) {
   const { ctx, fiche, synthese, criteres, droits } = await chargerFiche(id);
-  const { interactions } = await casDUsage.consulterJournal(ctx, { beneficiaireId: id });
+  const { interactions, notes } = await casDUsage.consulterJournal(ctx, { beneficiaireId: id });
   const appelsIa = interactions.filter((i) => i.type === "appel_ia");
   const b = fiche.beneficiaire;
   const f = fiche.foyer;
@@ -58,7 +59,7 @@ export async function OngletInfos({ id }: { id: string }) {
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="flex flex-col gap-6">
+      <Surface className="flex flex-col divide-y">
         <Bloc titre="Identité et coordonnées">
           <Renseignees
             items={[
@@ -167,9 +168,25 @@ export async function OngletInfos({ id }: { id: string }) {
             ]}
           />
         </Bloc>
-      </div>
 
-      <div className="flex flex-col gap-6">
+        {notes.length > 0 && (
+          <Bloc titre={`Notes (${notes.length})`}>
+            <ul className="flex flex-col divide-y">
+              {notes.map((n) => (
+                <li key={n.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                  <p className="whitespace-pre-line">{n.texte}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {n.source === "import" ? "Importée" : "Ajoutée"} le {formaterDateHeure(n.at)}
+                    {n.auteur && ` par ${n.auteur}`}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Bloc>
+        )}
+      </Surface>
+
+      <Surface className="flex flex-col divide-y">
         <Bloc titre="Foyer">
           {fiche.autresMembresFoyer.length ? (
             <ul className="flex flex-col gap-1">
@@ -277,7 +294,7 @@ export async function OngletInfos({ id }: { id: string }) {
             <p className="border-t pt-3 text-muted-foreground">Aucun appel par l&apos;assistant pour le moment.</p>
           )}
         </Bloc>
-      </div>
+      </Surface>
     </div>
   );
 }

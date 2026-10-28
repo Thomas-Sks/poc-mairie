@@ -14,7 +14,7 @@ import { Champ, ChoixSegmente, classeSelect } from "./champs";
 import { NIVEAU_ALERTE_LIBELLES } from "./libelles";
 
 /** E9-US1 : déclenchement d'une alerte par l'admin. */
-export function FormulaireAlerte({ aujourdhui }: { aujourdhui: string }) {
+export function FormulaireAlerte({ aujourdhui, listeId }: { aujourdhui: string; /** Sélection venue du tableau des bénéficiaires. */ listeId?: string }) {
   const router = useRouter();
   const [enCours, demarrer] = useTransition();
   const [type, setType] = useState<TypeAlerte>("canicule");
@@ -47,7 +47,7 @@ export function FormulaireAlerte({ aujourdhui }: { aujourdhui: string }) {
         return;
       }
       toast.success("Alerte déclenchée. Créez maintenant la campagne d'appels.");
-      router.push(`/alertes/${r.alerteId}/campagne`);
+      router.push(`/alertes/${r.alerteId}/campagne${listeId ? `?liste=${listeId}` : ""}`);
     });
   };
 
