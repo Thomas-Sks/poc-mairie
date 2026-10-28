@@ -16,4 +16,11 @@ export type ContexteSeed = {
 
 export type ExtensionSeed = (db: PostgresJsDatabase<typeof s>, ctx: ContexteSeed) => Promise<void>;
 
-export const EXTENSIONS_SEED: ExtensionSeed[] = [];
+export const EXTENSIONS_SEED: ExtensionSeed[] = [
+  // Module bénévole : campagne active de développement, désactivée par défaut (SEED_CAMPAGNE_TEST=1 pour l'activer).
+  async (db, ctx) => {
+    if (process.env.SEED_CAMPAGNE_TEST !== "1") return;
+    const { seedCampagneTestBenevole } = await import("@/modules/benevole/infrastructure/seed-campagne-test");
+    await seedCampagneTestBenevole(db, ctx);
+  },
+];
