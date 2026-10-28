@@ -1,0 +1,311 @@
+<title>DA Mairie</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : colonne unique, sections empilées, un écran d'exemple en fin de page. Light mode assumé (thème unique). */
+:root {
+  color-scheme: light;
+  /* Neutres chauds (légère teinte sable, jamais gris pur) */
+  --bg: #F7F6F3;          /* fond d'application */
+  --surface: #FFFFFF;     /* cartes, panneaux, champs */
+  --line: #E4E1DA;        /* bordures */
+  --line-strong: #CFCAC0; /* bordures de champs */
+  --ink: #23272E;         /* texte principal */
+  --ink-2: #5B606A;       /* texte secondaire */
+  --ink-3: #8A8E96;       /* aide, placeholders */
+  /* Accent unique : bleu canard */
+  --accent: #1D6670;
+  --accent-hover: #17555D;
+  --accent-soft: #E6F1F2;
+  /* Sémantique (désaturée) */
+  --ok: #2F7A4F;      --ok-soft: #E8F3EC;
+  --warn: #9A6412;    --warn-soft: #FBF1E0;
+  --err: #B03A2E;     --err-soft: #F9E9E7;
+  /* Forme */
+  --r: 8px;           /* rayon unique : boutons, champs, cartes */
+  --r-pill: 999px;    /* uniquement pour les statuts */
+  --font: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  /* Échelle typo */
+  --t-xs: 0.8125rem; --t-sm: 0.875rem; --t-md: 1rem; --t-lg: 1.25rem; --t-xl: 1.625rem;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-size: var(--t-md); line-height: 1.5;
+}
+.wrap {
+  max-width: 980px; margin: 0 auto;
+  padding-block: 40px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px;
+}
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: var(--t-xl); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: var(--t-lg); font-weight: 600; }
+h3 { font-size: var(--t-md); font-weight: 600; }
+p { margin: 0; max-width: 65ch; }
+.muted { color: var(--ink-2); }
+.label {
+  font-size: var(--t-xs); font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--ink-3);
+}
+section { display: grid; gap: 16px; }
+.panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 24px; display: grid; gap: 20px;
+}
+
+/* Principes */
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.principles div { display: grid; gap: 4px; }
+.principles p { font-size: var(--t-sm); color: var(--ink-2); }
+
+/* Couleurs */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.sw { display: grid; gap: 8px; font-size: var(--t-sm); }
+.sw i { display: block; height: 56px; border-radius: var(--r); border: 1px solid var(--line); }
+.sw code { color: var(--ink-3); font-size: var(--t-xs); font-family: inherit; font-variant-numeric: tabular-nums; }
+
+/* Typo */
+.typo { display: grid; gap: 12px; }
+.typo-row { display: grid; grid-template-columns: 110px 1fr; gap: 16px; align-items: baseline; }
+.typo-row span:first-child { font-size: var(--t-xs); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* Boutons */
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn {
+  font: inherit; font-size: var(--t-md); font-weight: 600;
+  min-height: 44px; padding: 0 20px; border-radius: var(--r);
+  border: 1px solid transparent; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn:focus-visible, .field input:focus-visible, .field select:focus-visible, .nav a:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 2px;
+}
+.btn-primary { background: var(--accent); color: #FFFFFF; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-ghost { background: transparent; color: var(--accent); padding: 0 12px; }
+.btn-ghost:hover { background: var(--accent-soft); }
+.btn-danger { background: var(--surface); color: var(--err); border-color: var(--err); }
+.btn-danger:hover { background: var(--err-soft); }
+.btn[disabled] { background: var(--bg); color: var(--ink-3); border-color: var(--line); cursor: not-allowed; }
+
+/* Champs */
+.form { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.field { display: grid; gap: 6px; }
+.field label { font-size: var(--t-sm); font-weight: 600; }
+.field input, .field select {
+  font: inherit; color: var(--ink); background: var(--surface);
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--r);
+}
+.field input::placeholder { color: var(--ink-3); }
+.field .help { font-size: var(--t-xs); color: var(--ink-2); }
+.field.error input { border-color: var(--err); }
+.field.error .help { color: var(--err); }
+
+/* Statuts */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--t-xs); font-weight: 600; padding: 3px 10px; border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill-ok { background: var(--ok-soft); color: var(--ok); }
+.pill-warn { background: var(--warn-soft); color: var(--warn); }
+.pill-err { background: var(--err-soft); color: var(--err); }
+.pill-new { background: var(--accent-soft); color: var(--accent); }
+
+/* Écran d'exemple */
+.screen {
+  border: 1px solid var(--line); border-radius: var(--r); overflow: hidden;
+  display: grid; grid-template-columns: 220px 1fr; background: var(--bg);
+}
+.side { background: var(--surface); border-right: 1px solid var(--line); padding: 20px 12px; display: grid; align-content: start; gap: 20px; }
+.brand { padding: 0 8px; display: grid; gap: 2px; }
+.brand strong { font-size: var(--t-md); }
+.brand span { font-size: var(--t-xs); color: var(--ink-3); }
+.nav { display: grid; gap: 2px; }
+.nav a {
+  color: var(--ink-2); text-decoration: none; font-size: var(--t-sm); font-weight: 500;
+  padding: 10px 12px; border-radius: var(--r);
+}
+.nav a:hover { background: var(--bg); color: var(--ink); }
+.nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.main { padding: 28px; display: grid; gap: 20px; align-content: start; min-width: 0; }
+.main-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+.main-head div { display: grid; gap: 2px; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); min-width: 520px; }
+th { text-align: left; font-weight: 600; color: var(--ink-2); padding: 12px 16px; border-bottom: 1px solid var(--line); }
+td { padding: 14px 16px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+tr:last-child td { border-bottom: 0; }
+td .sub { display: block; color: var(--ink-3); font-size: var(--t-xs); }
+td:last-child { text-align: right; }
+
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 32px; margin: 0; padding: 0; list-style: none; font-size: var(--t-sm); }
+.rules li { display: grid; grid-template-columns: 56px 1fr; gap: 12px; }
+.rules b { color: var(--ink-3); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .screen { grid-template-columns: 1fr; }
+  .side { border-right: 0; border-bottom: 1px solid var(--line); }
+  .nav { grid-auto-flow: column; overflow-x: auto; }
+  .main { padding: 20px 16px; }
+  .typo-row { grid-template-columns: 1fr; gap: 2px; }
+}
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <span class="label">Direction artistique · proposition</span>
+    <h1>Application des services municipaux</h1>
+    <p class="muted">Une app bureautique pour les agents de mairie. Claire, calme et chaleureuse : l'information d'abord, une action principale par écran, aucune animation.</p>
+  </header>
+
+  <section>
+    <h2>Principes</h2>
+    <div class="panel principles">
+      <div><h3>Une chose à la fois</h3><p>Chaque écran sert une tâche. Une seule action principale, en couleur d'accent.</p></div>
+      <div><h3>Lisible avant tout</h3><p>Texte en 16 px minimum, contrastes AA, libellés explicites plutôt qu'icônes seules.</p></div>
+      <div><h3>Gros boutons</h3><p>Hauteur 44 px partout. On voit tout de suite où cliquer.</p></div>
+      <div><h3>Une seule forme</h3><p>Rayon 8 px sur boutons, champs et cartes. Les pastilles de statut sont le seul élément arrondi.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Couleurs</h2>
+    <div class="panel">
+      <div style="display:grid;gap:10px">
+        <span class="label">Neutres chauds</span>
+        <div class="swatches">
+          <div class="sw"><i style="background:var(--bg)"></i>Fond<code>#F7F6F3</code></div>
+          <div class="sw"><i style="background:var(--surface)"></i>Surface<code>#FFFFFF</code></div>
+          <div class="sw"><i style="background:var(--line)"></i>Bordure<code>#E4E1DA</code></div>
+          <div class="sw"><i style="background:var(--ink-2)"></i>Texte secondaire<code>#5B606A</code></div>
+          <div class="sw"><i style="background:var(--ink)"></i>Texte<code>#23272E</code></div>
+        </div>
+      </div>
+      <div style="display:grid;gap:10px">
+        <span class="label">Accent unique</span>
+        <div class="swatches">
+          <div class="sw"><i style="background:var(--accent)"></i>Bleu canard<code>#1D6670</code></div>
+          <div class="sw"><i style="background:var(--accent-soft)"></i>Canard léger<code>#E6F1F2</code></div>
+        </div>
+      </div>
+      <div style="display:grid;gap:10px">
+        <span class="label">États (réservés aux statuts et messages)</span>
+        <div class="swatches">
+          <div class="sw"><i style="background:var(--ok)"></i>Validé<code>#2F7A4F</code></div>
+          <div class="sw"><i style="background:var(--warn)"></i>En attente<code>#9A6412</code></div>
+          <div class="sw"><i style="background:var(--err)"></i>Erreur, refus<code>#B03A2E</code></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Typographie</h2>
+    <div class="panel typo">
+      <p class="muted" style="font-size:var(--t-sm)">Public Sans, une seule famille, conçue pour les services publics. Chiffres alignés dans les tableaux.</p>
+      <div class="typo-row"><span>Titre · 26 / 700</span><span style="font-size:var(--t-xl);font-weight:700">Demandes d'état civil</span></div>
+      <div class="typo-row"><span>Section · 20 / 600</span><span style="font-size:var(--t-lg);font-weight:600">Informations du demandeur</span></div>
+      <div class="typo-row"><span>Corps · 16 / 400</span><span>Acte de naissance demandé le 14 octobre 2026 par courrier.</span></div>
+      <div class="typo-row"><span>Libellé · 14 / 600</span><span style="font-size:var(--t-sm);font-weight:600">Date de naissance</span></div>
+      <div class="typo-row"><span>Aide · 13 / 400</span><span style="font-size:var(--t-xs);color:var(--ink-2)">Format attendu : JJ/MM/AAAA</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Boutons</h2>
+    <div class="panel">
+      <div class="row">
+        <button class="btn btn-primary" type="button">Enregistrer la demande</button>
+        <button class="btn btn-secondary" type="button">Annuler</button>
+        <button class="btn btn-ghost" type="button">Voir l'historique</button>
+        <button class="btn btn-danger" type="button">Supprimer</button>
+        <button class="btn btn-primary" type="button" disabled>Envoyer</button>
+      </div>
+      <p class="muted" style="font-size:var(--t-sm)">Principal · Secondaire · Lien · Destructif · Désactivé. Le libellé dit toujours ce qui va se passer.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Formulaires et statuts</h2>
+    <div class="panel">
+      <form class="form" onsubmit="event.preventDefault()">
+        <div class="field">
+          <label for="nom">Nom de naissance</label>
+          <input id="nom" value="Moreau">
+        </div>
+        <div class="field">
+          <label for="type">Type d'acte</label>
+          <select id="type"><option>Acte de naissance</option><option>Acte de mariage</option><option>Acte de décès</option></select>
+        </div>
+        <div class="field error">
+          <label for="date">Date de naissance</label>
+          <input id="date" value="31/02/1984">
+          <span class="help">Cette date n'existe pas. Vérifiez le jour et le mois.</span>
+        </div>
+        <div class="field">
+          <label for="tel">Téléphone</label>
+          <input id="tel" placeholder="06 12 34 56 78">
+          <span class="help">Facultatif</span>
+        </div>
+      </form>
+      <div class="row">
+        <span class="pill pill-new">Nouvelle</span>
+        <span class="pill pill-warn">En attente de pièce</span>
+        <span class="pill pill-ok">Délivrée</span>
+        <span class="pill pill-err">Refusée</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Exemple d'écran</h2>
+    <div class="screen">
+      <aside class="side">
+        <div class="brand"><strong>Mairie de Saint-Aubin</strong><span>Service état civil</span></div>
+        <nav class="nav" aria-label="Navigation">
+          <a href="#" aria-current="page">Demandes</a>
+          <a href="#">Rendez-vous</a>
+          <a href="#">Courriers</a>
+          <a href="#">Usagers</a>
+        </nav>
+      </aside>
+      <div class="main">
+        <div class="main-head">
+          <div><h2>Demandes d'actes</h2><span class="muted" style="font-size:var(--t-sm)">4 demandes à traiter</span></div>
+          <button class="btn btn-primary" type="button">Nouvelle demande</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Demandeur</th><th>Acte</th><th>Reçue le</th><th>Statut</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>Claire Moreau<span class="sub">N° 2026-1184</span></td><td>Naissance</td><td>27/10/2026</td><td><span class="pill pill-new">Nouvelle</span></td><td><button class="btn btn-ghost" type="button">Ouvrir</button></td></tr>
+              <tr><td>Karim Benali<span class="sub">N° 2026-1179</span></td><td>Mariage</td><td>24/10/2026</td><td><span class="pill pill-warn">En attente de pièce</span></td><td><button class="btn btn-ghost" type="button">Ouvrir</button></td></tr>
+              <tr><td>Jeanne Lefèvre<span class="sub">N° 2026-1172</span></td><td>Décès</td><td>22/10/2026</td><td><span class="pill pill-ok">Délivrée</span></td><td><button class="btn btn-ghost" type="button">Ouvrir</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Règles pour le développement</h2>
+    <div class="panel">
+      <ul class="rules">
+        <li><b>Espace</b><span>Multiples de 4 px. 24 px dans les panneaux, 40 px entre sections.</span></li>
+        <li><b>Rayon</b><span>8 px partout. Pastilles de statut seulement en arrondi complet.</span></li>
+        <li><b>Ombres</b><span>Aucune. Les blocs se distinguent par une bordure de 1 px.</span></li>
+        <li><b>Motion</b><span>Aucune animation ni transition. Survol par simple changement de fond.</span></li>
+        <li><b>Couleur</b><span>Un seul accent. Vert, ambre et rouge uniquement pour un état.</span></li>
+        <li><b>Densité</b><span>Une tâche par écran, 5 à 7 colonnes maximum dans un tableau.</span></li>
+      </ul>
+    </div>
+  </section>
+</div>
