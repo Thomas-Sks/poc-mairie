@@ -271,24 +271,30 @@ export async function OngletInfos({ id }: { id: string }) {
           <InterrupteurIa beneficiaireId={id} active={fiche.iaActivee} consentement={b.consentementIa} modifiable={droits.ecrire} />
           {appelsIa.length ? (
             <ul className="divide-y border-t">
-              {appelsIa.map((a) => (
-                <li key={a.id}>
-                  <Link href={`/beneficiaires/${id}/appels-ia/${a.id}`} className="flex min-h-11 items-center justify-between gap-3 py-2.5 hover:text-primary">
-                    <span className="flex flex-col gap-1">
-                      <span className="font-medium">{formaterDateHeure(a.survenueLe)}</span>
-                      {a.resultat && (
-                        <Pastille ton={tonResultat(a.resultat)} className="w-fit">
-                          {STATUT_CIBLE_LIBELLES[a.resultat]}
-                        </Pastille>
-                      )}
-                    </span>
-                    <span className="flex items-center gap-1 text-sm font-medium text-primary">
-                      Transcription
-                      <ChevronRight className="size-4" aria-hidden />
-                    </span>
-                  </Link>
-                </li>
-              ))}
+              {appelsIa.map((a) => {
+                const resume = (
+                  <span className="flex min-w-0 flex-col items-start gap-1">
+                    <span className="font-medium">{formaterDateHeure(a.survenueLe)}</span>
+                    {a.resultat && <Pastille ton={tonResultat(a.resultat)}>{STATUT_CIBLE_LIBELLES[a.resultat]}</Pastille>}
+                  </span>
+                );
+                return (
+                  <li key={a.id}>
+                    {/* Seuls les appels avec transcription ont une page de détail. */}
+                    {a.aDetailIa ? (
+                      <Link href={`/beneficiaires/${id}/appels-ia/${a.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2.5 hover:text-primary">
+                        {resume}
+                        <span className="flex items-center gap-1 text-sm font-medium text-primary">
+                          Transcription
+                          <ChevronRight className="size-4" aria-hidden />
+                        </span>
+                      </Link>
+                    ) : (
+                      <div className="py-2.5">{resume}</div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="border-t pt-3 text-muted-foreground">Aucun appel par l&apos;assistant pour le moment.</p>
