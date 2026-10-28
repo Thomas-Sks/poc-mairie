@@ -94,7 +94,7 @@ export async function PageVueEnsemble() {
             <h2 className="text-xl font-semibold">Contacts des 12 derniers mois</h2>
             <p className="text-muted-foreground">Appels de suivi, appels passés pendant une alerte et visites à domicile.</p>
           </div>
-          <div className="min-h-64 flex-1">
+          <div className="flex-1">
             <GraphiqueActivite mois={v.activite} />
           </div>
         </Surface>
