@@ -5,6 +5,7 @@
  */
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as s from "../db/schema";
+import { seedTaches } from "@/modules/taches/infrastructure/seed-taches";
 
 export type ContexteSeed = {
   communeId: string;
@@ -16,4 +17,4 @@ export type ContexteSeed = {
 
 export type ExtensionSeed = (db: PostgresJsDatabase<typeof s>, ctx: ContexteSeed) => Promise<void>;
 
-export const EXTENSIONS_SEED: ExtensionSeed[] = [];
+export const EXTENSIONS_SEED: ExtensionSeed[] = [seedTaches];
