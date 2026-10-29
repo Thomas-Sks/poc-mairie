@@ -245,6 +245,72 @@ function useDefilementHorizontal(dependances: unknown[]) {
   return { zone, ...cote, defiler };
 }
 
+/** Distance (px) à parcourir avant qu'un clic maintenu devienne un glissement : un simple clic reste un clic. */
+const SEUIL_GLISSEMENT = 5;
+
+/**
+ * « Attraper » le tableau à la souris (clic gauche maintenu) pour le faire glisser dans tous les sens.
+ * Le tactile garde le défilement natif du navigateur. Après un glissement, le clic qui suit est ignoré
+ * (on ne veut pas ouvrir la fiche sur laquelle on a relâché la souris).
+ */
+function useGlisserPourDefiler(zone: React.RefObject<HTMLDivElement | null>, actif: boolean) {
+  useEffect(() => {
+    const el = zone.current;
+    if (!el || !actif) return;
+    let depart: { x: number; y: number; gauche: number; haut: number; pointeur: number } | null = null;
+    let glisse = false;
+
+    const appui = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      depart = { x: e.clientX, y: e.clientY, gauche: el.scrollLeft, haut: el.scrollTop, pointeur: e.pointerId };
+      glisse = false;
+    };
+    const mouvement = (e: PointerEvent) => {
+      if (!depart) return;
+      const dx = e.clientX - depart.x;
+      const dy = e.clientY - depart.y;
+      if (!glisse) {
+        if (Math.hypot(dx, dy) < SEUIL_GLISSEMENT) return;
+        glisse = true;
+        el.setPointerCapture(depart.pointeur);
+        el.dataset.glisse = "";
+      }
+      e.preventDefault();
+      el.scrollLeft = depart.gauche - dx;
+      el.scrollTop = depart.haut - dy;
+    };
+    const ignorerClic = (e: MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+    };
+    const relache = () => {
+      if (glisse) {
+        delete el.dataset.glisse;
+        if (depart && el.hasPointerCapture(depart.pointeur)) el.releasePointerCapture(depart.pointeur);
+        el.addEventListener("click", ignorerClic, { capture: true, once: true });
+        setTimeout(() => el.removeEventListener("click", ignorerClic, { capture: true }), 0);
+      }
+      depart = null;
+      glisse = false;
+    };
+    // Les liens (noms) sont « déplaçables » par défaut : on empêche le glisser-déposer natif du navigateur.
+    const glisserNatif = (e: DragEvent) => e.preventDefault();
+
+    el.addEventListener("pointerdown", appui);
+    el.addEventListener("pointermove", mouvement);
+    el.addEventListener("pointerup", relache);
+    el.addEventListener("pointercancel", relache);
+    el.addEventListener("dragstart", glisserNatif);
+    return () => {
+      el.removeEventListener("pointerdown", appui);
+      el.removeEventListener("pointermove", mouvement);
+      el.removeEventListener("pointerup", relache);
+      el.removeEventListener("pointercancel", relache);
+      el.removeEventListener("dragstart", glisserNatif);
+    };
+  }, [zone, actif]);
+}
+
 type Fenetres = "assigner" | "tag" | "statut" | "export" | "liste" | `externe:${string}` | null;
 
 export function TableauBeneficiaires({
@@ -334,6 +400,7 @@ export function TableauBeneficiaires({
 
   const lignes = useMemo(() => data?.lignes ?? [], [data]);
   const defilement = useDefilementHorizontal([colonnes, lignes, mode]);
+  useGlisserPourDefiler(defilement.zone, mode === "tableau" && lignes.length > 0);
   const total = data?.total ?? 0;
   const noms = useMemo(() => Object.fromEntries(referentiels.equipe.map((m) => [m.id, m.prenom])), [referentiels.equipe]);
   const nomsComplets = useMemo(() => Object.fromEntries(referentiels.equipe.map((m) => [m.id, `${m.prenom} ${m.nom}`])), [referentiels.equipe]);
@@ -646,8 +713,8 @@ export function TableauBeneficiaires({
                 ref={defilement.zone}
                 tabIndex={0}
                 role="region"
-                aria-label="Tableau des bénéficiaires (défilement avec les flèches du clavier)"
-                className="relative max-h-[calc(100dvh-12rem)] overflow-auto outline-none focus-visible:ring-3 focus-visible:ring-ring/50 max-md:hidden"
+                aria-label="Tableau des bénéficiaires (cliquez-glissez ou utilisez les flèches du clavier pour le parcourir)"
+                className="relative max-h-[calc(100dvh-12rem)] cursor-grab overflow-auto outline-none focus-visible:ring-3 focus-visible:ring-ring/50 data-[glisse]:cursor-grabbing data-[glisse]:select-none data-[glisse]:[&_*]:cursor-grabbing max-md:hidden"
               >
                 <table className="w-full text-left">
                   <thead>
