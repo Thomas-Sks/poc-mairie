@@ -5,7 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Download, FileText, Phone, Settings2 } from "lucide-react";
+import { Bot, Download, Phone, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formaterDateLongue, formaterHeure } from "@/shared/domain/dates";
@@ -60,34 +60,28 @@ export function TableauDeBordCampagne({ initial, vagueDemandee }: { initial: Don
   return (
     <Page>
       <EnTetePage
-        retour={<LienRetour href="/alertes">Alertes et campagnes</LienRetour>}
+        retour={<LienRetour href="/alertes">Alertes</LienRetour>}
         titre={campagne.nom}
         description={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {campagne.alerte && (
-              <>
-                {ALERTE_LIBELLES[campagne.alerte.type]}
-                <Pastille ton={campagne.statut === "active" ? NIVEAU_ALERTE_TONS[campagne.alerte.niveau] : "neutre"}>
-                  {NIVEAU_ALERTE_LIBELLES[campagne.alerte.niveau]}
-                </Pastille>
-              </>
+              <Pastille ton={campagne.statut === "active" ? NIVEAU_ALERTE_TONS[campagne.alerte.niveau] : "neutre"}>
+                {NIVEAU_ALERTE_LIBELLES[campagne.alerte.niveau]}
+              </Pastille>
             )}
             <span>
-              {data.vague ? `Vague du ${formaterDateLongue(data.vague)}` : "Aucune vague"} · {CANAL_LIBELLES[campagne.canal]}
+              {data.vague ? `Appels du ${formaterDateLongue(data.vague)}` : "Aucun appel prévu"}
+              {campagne.canal !== "humain" && ` · ${CANAL_LIBELLES[campagne.canal]}`}
             </span>
           </span>
         }
         actions={
           <>
             {active && <DialogueRepartition campagneId={id} membres={membres} equipe={campagne.equipe} onFait={rafraichir} />}
-            <a href={`/api/campagnes/${id}/export${data.vague ? `?vague=${data.vague}` : ""}`} className={buttonVariants({ variant: "outline" })}>
+            <a href={`/api/campagnes/${id}/export${data.vague ? `?vague=${data.vague}` : ""}`} className={buttonVariants({ variant: "ghost" })}>
               <Download aria-hidden />
-              Export de secours (CSV)
+              Liste papier (CSV)
             </a>
-            <Link href={`/campagnes/${id}/rapport`} className={buttonVariants({ variant: "outline" })}>
-              <FileText aria-hidden />
-              Rapport
-            </Link>
             {campagne.statut === "active" && data.peutCloturer && campagne.alerte && (
               <BoutonCloturer alerteId={campagne.alerte.id} libelle={ALERTE_LIBELLES[campagne.alerte.type]} />
             )}
@@ -97,9 +91,9 @@ export function TableauDeBordCampagne({ initial, vagueDemandee }: { initial: Don
 
       {campagne.statut === "cloturee" && (
         <Bandeau ton="accent">
-          Campagne clôturée{campagne.dateFin ? ` le ${formaterDateLongue(campagne.dateFin)}` : ""} : consultation seule.{" "}
+          Appels terminés{campagne.dateFin ? ` le ${formaterDateLongue(campagne.dateFin)}` : ""}.{" "}
           <Link href={`/campagnes/${id}/rapport`} className="underline underline-offset-4">
-            Voir le rapport
+            Voir le bilan
           </Link>
         </Bandeau>
       )}

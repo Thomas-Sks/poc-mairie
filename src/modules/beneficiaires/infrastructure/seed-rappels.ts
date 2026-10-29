@@ -1,5 +1,5 @@
 /**
- * Extension du seed pour « Mes tâches du jour » (§10.4-1) :
+ * Extension du seed : rappels et dates du fil rouge (§10.4-1), visibles sur les fiches :
  * - seuls les deux anniversaires du fil rouge (90 ans demain, 85 ans à J+3) tombent dans la fenêtre de rappel ;
  *   les autres anniversaires aléatoires de la fenêtre sont décalés de 10 jours (âge inchangé à un jour près) ;
  * - quelques fiches reçoivent une fréquence de contact cible (E4-US4), dont deux sont dues aujourd'hui.
@@ -11,7 +11,7 @@ import type { ExtensionSeed } from "@/shared/infrastructure/seed/extensions";
 
 const FENETRE_ANNIVERSAIRE = 7;
 
-export const seedTaches: ExtensionSeed = async (db, { communeId, jour, beneficiaires }) => {
+export const seedRappels: ExtensionSeed = async (db, { communeId, jour, beneficiaires }) => {
   const actifs = beneficiaires.filter((b) => b.statut === "active");
   const estPersonnage = (b: (typeof beneficiaires)[number]) => {
     const { age } = prochainAnniversaire(b.dateNaissance, jour);

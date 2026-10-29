@@ -419,14 +419,6 @@ export const assignations = pgTable(
   (t) => [primaryKey({ columns: [t.beneficiaireId, t.utilisateurId] })],
 );
 
-/** E8-US10 : vues sauvegardées par utilisateur. */
-export const vuesSauvegardees = pgTable("vues_sauvegardees", {
-  id: id(),
-  utilisateurId: uuid("utilisateur_id").notNull().references(() => utilisateurs.id, { onDelete: "cascade" }),
-  nom: text("nom").notNull(),
-  config: jsonb("config").$type<Record<string, unknown>>().notNull(),
-});
-
 // ─── Alertes & campagnes (E9) ─────────────────────────────────────────────────
 
 export const alertes = pgTable("alertes", {

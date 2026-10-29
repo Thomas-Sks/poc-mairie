@@ -2,14 +2,13 @@ import type { Contexte } from "@/shared/application/contexte";
 import { exiger } from "@/shared/domain/permissions";
 import type { GrilleScore } from "@/shared/domain/priorite";
 import { ParametresInvalides, verifierGrille, type ParametresCommune } from "../domain/parametres";
-import type { MembreEquipe, ParametresRepository } from "./ports";
+import type { ParametresRepository } from "./ports";
 
 type Deps = { parametres: ParametresRepository };
 
-export async function lireParametres(deps: Deps, ctx: Contexte): Promise<{ parametres: ParametresCommune; equipe: MembreEquipe[] }> {
+export async function lireParametres(deps: Deps, ctx: Contexte): Promise<{ parametres: ParametresCommune }> {
   exiger(ctx.utilisateur.role, "parametres.gerer");
-  const [parametres, equipe] = await Promise.all([deps.parametres.lire(ctx.commune.id), deps.parametres.equipe(ctx.commune.id)]);
-  return { parametres, equipe };
+  return { parametres: await deps.parametres.lire(ctx.commune.id) };
 }
 
 async function modifier(deps: Deps, ctx: Contexte, changement: (p: ParametresCommune) => ParametresCommune) {

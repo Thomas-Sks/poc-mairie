@@ -18,8 +18,8 @@ import {
   STATUT_CIBLE_LIBELLES,
   TYPE_LOGEMENT_LIBELLES,
 } from "@/shared/domain/vocabulaire";
-import { Pastille, PastillePriorite, Proprietes, Section, Surface } from "@/shared/ui/elements";
-import { libelleAdresse, nomComplet } from "../domain/fiche";
+import { Pastille, Proprietes, Section, Surface } from "@/shared/ui/elements";
+import { nomComplet } from "../domain/fiche";
 import { casDUsage } from "../infrastructure";
 import { chargerFiche } from "./cadre-fiche";
 import { InterrupteurIa } from "./interrupteur-ia";
@@ -81,7 +81,6 @@ export async function OngletInfos({ id }: { id: string }) {
         <Bloc titre="Logement">
           <Renseignees
             items={[
-              { libelle: "Adresse", valeur: `${libelleAdresse(f)}, ${f.codePostal} ${f.ville}` },
               {
                 libelle: "Complément",
                 valeur:
@@ -163,7 +162,7 @@ export async function OngletInfos({ id }: { id: string }) {
         <Bloc titre="Habitudes">
           <Renseignees
             items={[
-              { libelle: "Habitudes", valeur: b.habitudes },
+              { libelle: "Au quotidien", valeur: b.habitudes },
               { libelle: "Centres d'intérêt", valeur: b.centresInteret },
               {
                 libelle: "Étiquettes",
@@ -218,11 +217,8 @@ export async function OngletInfos({ id }: { id: string }) {
           )}
         </Bloc>
 
-        <Bloc titre="Score de priorité">
-          <div className="flex items-center gap-3">
-            <PastillePriorite niveau={synthese.niveau} score={fiche.score} />
-            {fiche.niveauForce && <span className="text-sm text-muted-foreground">calculé : {fiche.niveauPriorite}</span>}
-          </div>
+        <Bloc titre="Pourquoi cette priorité">
+          {fiche.niveauForce && <p className="text-sm text-muted-foreground">Niveau calculé : {fiche.niveauPriorite}</p>}
           {fiche.niveauForce && fiche.niveauForceJustification && <p className="text-sm">Forcé : « {fiche.niveauForceJustification} »</p>}
           {criteres.length ? (
             <ul className="divide-y">

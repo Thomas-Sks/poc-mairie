@@ -1,12 +1,12 @@
 /**
- * Données de démo du registre (branchées dans EXTENSIONS_SEED) : listes enregistrées et une vue.
+ * Données de démo du registre (branchées dans EXTENSIONS_SEED) : listes enregistrées.
  * Pas d'import `server-only` : exécuté par le script de seed (tsx).
  */
 import { and, eq, inArray } from "drizzle-orm";
 import * as s from "@/shared/infrastructure/db/schema";
 import type { ExtensionSeed } from "@/shared/infrastructure/seed/extensions";
 import { numeroCorrespond, versJson, type Filtre } from "../domain/filtre";
-import { colonnesVisiblesParDefaut, comparerPriorite } from "../domain/tableau";
+import { comparerPriorite } from "../domain/tableau";
 
 const MARAIS: Filtre = { version: 1, rues: [{ voie: "Rue du Marais", numeroMin: 1, numeroMax: 41, cote: "impair" }] };
 
@@ -44,16 +44,4 @@ export const seedRegistre: ExtensionSeed = async (db, ctx) => {
       creePar: julie?.id ?? admin?.id ?? null,
     },
   ]);
-
-  if (julie) {
-    await db.insert(s.vuesSauvegardees).values({
-      utilisateurId: julie.id,
-      nom: "Sans contact depuis 90 jours",
-      config: {
-        colonnes: [...colonnesVisiblesParDefaut(), "quartier"],
-        filtre: versJson({ version: 1, dernierContact: { sens: "plus_de", jours: 90 } }),
-        tri: [{ colonne: "dernierContact", sens: "asc" }],
-      },
-    });
-  }
 };

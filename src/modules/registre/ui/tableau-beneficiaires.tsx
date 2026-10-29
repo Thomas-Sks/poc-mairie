@@ -5,17 +5,15 @@
  * filtres combinables, sélection multiple, actions groupées, vue carte et temps réel (polling 2,5 s).
  * Le filtrage, le tri et la pagination sont faits côté serveur (`POST /api/registre/recherche`).
  */
-import { useEffect, useMemo, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { flexRender, getCoreRowModel, useReactTable, type ColumnDef, type RowSelectionState } from "@tanstack/react-table";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Columns3,
@@ -33,13 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -64,10 +56,12 @@ import {
   type ResultatTableau,
   type Tri,
 } from "../domain/tableau";
-import type { VueSauvegardee } from "../application/ports";
-import { actionRetirerAssignations, actionSupprimerVue, actionToutSelectionner } from "./actions";
+import { poserQuestionAction } from "@/modules/assistant/ui/actions";
+import type { ReponseRegistre } from "@/modules/assistant/domain/reponse";
+import { ReponseQuestion } from "@/modules/assistant/ui/reponse-question";
+import { actionRetirerAssignations, actionToutSelectionner } from "./actions";
 import { AppelRapide } from "./appel-rapide";
-import { FenetreAssigner, FenetreExport, FenetreListe, FenetreStatut, FenetreTag, FenetreVue } from "./fenetres";
+import { FenetreAssigner, FenetreExport, FenetreListe, FenetreStatut, FenetreTag } from "./fenetres";
 import { PanneauFiltres } from "./panneau-filtres";
 import { ACTIONS_GROUPEES_EXTERNES } from "./points-extension";
 import { IndicateurPresence } from "./presence";
@@ -222,26 +216,55 @@ function Bascule({ actif, onClick, children }: { actif: boolean; onClick: () => 
   );
 }
 
-type Fenetres = "assigner" | "tag" | "statut" | "export" | "liste" | "vue" | `externe:${string}` | null;
+/**
+ * Défilement horizontal du tableau quand il a trop de colonnes : savoir s'il reste des colonnes cachées
+ * à gauche ou à droite, et les faire apparaître avec des boutons (souris, Mac sans barre visible, tablette).
+ */
+function useDefilementHorizontal(dependances: unknown[]) {
+  const zone = useRef<HTMLDivElement>(null);
+  const [cote, setCote] = useState({ gauche: false, droite: false });
+  const mesurer = useCallback(() => {
+    const el = zone.current;
+    if (!el) return;
+    setCote({ gauche: el.scrollLeft > 4, droite: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  }, []);
+  useEffect(() => {
+    const el = zone.current;
+    if (!el) return;
+    mesurer();
+    const observateur = new ResizeObserver(mesurer);
+    observateur.observe(el);
+    el.addEventListener("scroll", mesurer, { passive: true });
+    return () => {
+      observateur.disconnect();
+      el.removeEventListener("scroll", mesurer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mesurer, ...dependances]);
+  const defiler = (sens: -1 | 1) => zone.current?.scrollBy({ left: sens * zone.current.clientWidth * 0.6 });
+  return { zone, ...cote, defiler };
+}
+
+type Fenetres = "assigner" | "tag" | "statut" | "export" | "liste" | `externe:${string}` | null;
 
 export function TableauBeneficiaires({
   referentiels,
   droits,
-  vues,
   listeId,
   ressource,
   configInitiale,
+  questionInitiale,
 }: {
   referentiels: Referentiels;
   droits: Droits;
-  vues: VueSauvegardee[];
   /** Consultation d'une liste enregistrée : son filtre (ou ses ids) s'ajoute au filtre saisi. */
   listeId?: string;
   /** Ressource de présence (ex. `beneficiaires`, `liste:<id>`). */
   ressource: string;
   configInitiale?: Partial<ConfigVue>;
+  /** Question posée depuis un lien (`/beneficiaires?q=…`). */
+  questionInitiale?: string;
 }) {
-  const router = useRouter();
   const client = useQueryClient();
   const grandEcran = useEstGrandEcran();
   const disponibles = useMemo(() => colonnesAutorisees(COLONNES, droits.sante), [droits.sante]);
@@ -255,7 +278,9 @@ export function TableauBeneficiaires({
   const [mode, setMode] = useState<"tableau" | "carte">("tableau");
   const [panneauOuvert, setPanneauOuvert] = useState(false);
   const [fenetre, setFenetre] = useState<Fenetres>(null);
-  const [saisie, setSaisie] = useState(filtre.recherche ?? "");
+  const [question, setQuestion] = useState(questionInitiale ?? "");
+  const [reponse, setReponse] = useState<ReponseRegistre | null>(null);
+  const [enQuestion, demarrerQuestion] = useTransition();
   const [enCours, demarrer] = useTransition();
 
   const setFiltre = (f: Filtre) => {
@@ -264,14 +289,32 @@ export function TableauBeneficiaires({
     setSelection({});
   };
 
-  // Recherche plein texte : différée de 300 ms
+  /**
+   * Une seule zone de saisie : la question est confiée à l'assistant. Une réponse sur des personnes filtre le tableau
+   * et la carte ; un nom ou une adresse devient une simple recherche ; un chiffre s'affiche au-dessus du tableau.
+   */
+  const poser = (texte: string) => {
+    const q = texte.trim();
+    setQuestion(q);
+    if (!q) {
+      setReponse(null);
+      setFiltre(FILTRE_VIDE);
+      return;
+    }
+    demarrerQuestion(async () => {
+      const r = await poserQuestionAction(q);
+      if (!r.ok) return void toast.error(r.erreur);
+      const rep = r.reponse;
+      if (rep.type === "recherche") setFiltre({ ...FILTRE_VIDE, recherche: rep.texte });
+      else if (rep.type === "personnes") setFiltre({ ...FILTRE_VIDE, ids: rep.ids, question: q });
+      setReponse(rep.type === "recherche" ? null : rep);
+    });
+  };
+
   useEffect(() => {
-    const t = setTimeout(() => {
-      if ((filtre.recherche ?? "") !== saisie.trim()) setFiltre({ ...filtre, recherche: saisie });
-    }, 300);
-    return () => clearTimeout(t);
+    if (questionInitiale) poser(questionInitiale);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [saisie]);
+  }, []);
 
   const cleFiltre = serialiserFiltre(filtre);
   const requete = { filtre, listeId, tri, page, taillePage };
@@ -290,6 +333,7 @@ export function TableauBeneficiaires({
   });
 
   const lignes = useMemo(() => data?.lignes ?? [], [data]);
+  const defilement = useDefilementHorizontal([colonnes, lignes, mode]);
   const total = data?.total ?? 0;
   const noms = useMemo(() => Object.fromEntries(referentiels.equipe.map((m) => [m.id, m.prenom])), [referentiels.equipe]);
   const nomsComplets = useMemo(() => Object.fromEntries(referentiels.equipe.map((m) => [m.id, `${m.prenom} ${m.nom}`])), [referentiels.equipe]);
@@ -350,14 +394,6 @@ export function TableauBeneficiaires({
     onRowSelectionChange: setSelection,
   });
 
-  const appliquerVue = (v: VueSauvegardee) => {
-    setColonnes(colonnesAutorisees(v.config.colonnes, droits.sante));
-    setTri(v.config.tri);
-    setSaisie(v.config.filtre.recherche ?? "");
-    setFiltre(v.config.filtre);
-    toast.success(`Vue « ${v.nom} » appliquée`);
-  };
-
   const toutSelectionner = () =>
     demarrer(async () => {
       const r = await actionToutSelectionner({ filtre, listeId });
@@ -385,13 +421,33 @@ export function TableauBeneficiaires({
     <div className="flex flex-col gap-4">
       {/* Barre d'outils */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-0 flex-1 basis-64">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-subtle-foreground" aria-hidden />
-          <label htmlFor="recherche-beneficiaires" className="sr-only">
-            Rechercher par nom, téléphone ou adresse
-          </label>
-          <Input id="recherche-beneficiaires" type="search" className="pl-10" placeholder="Nom, téléphone ou adresse" value={saisie} onChange={(e) => setSaisie(e.target.value)} />
-        </div>
+        <form
+          className="flex min-w-0 flex-1 basis-80 gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            poser(question);
+          }}
+        >
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-subtle-foreground" aria-hidden />
+            <label htmlFor="question-registre" className="sr-only">
+              Posez une question ou cherchez un nom
+            </label>
+            <Input
+              id="question-registre"
+              type="search"
+              className="h-12 pl-10 text-lg"
+              placeholder="Ex. Personnes P1 qui vivent seules, ou un nom"
+              value={question}
+              maxLength={300}
+              autoComplete="off"
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+          </div>
+          <Button type="submit" className="h-12" disabled={enQuestion}>
+            Demander
+          </Button>
+        </form>
         <Button
           variant="outline"
           aria-expanded={grandEcran ? panneauOuvert : undefined}
@@ -409,56 +465,10 @@ export function TableauBeneficiaires({
             <IconeCarte aria-hidden /> Carte
           </Bascule>
         </div>
-        {mode === "tableau" && (
-          <div className="max-md:hidden">
-            <ChoixColonnes colonnes={colonnes} disponibles={disponibles} onChange={setColonnes} />
-          </div>
-        )}
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="outline" />}>
-            Vues <ChevronDown aria-hidden />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72 text-base">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Mes vues enregistrées</DropdownMenuLabel>
-              {vues.length === 0 && <p className="px-1.5 py-2 text-[0.9375rem] text-muted-foreground">Aucune vue pour l&apos;instant.</p>}
-              {vues.map((v) => (
-                <DropdownMenuItem key={v.id} className="min-h-11 text-base" onClick={() => appliquerVue(v)}>
-                  {v.nom}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="min-h-11 text-base" onClick={() => setFenetre("vue")}>
-              Enregistrer la vue actuelle
-            </DropdownMenuItem>
-            {vues.length > 0 && (
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="min-h-11 text-base">Supprimer une vue</DropdownMenuSubTrigger>
-                <DropdownMenuSubContent className="text-base">
-                  {vues.map((v) => (
-                    <DropdownMenuItem
-                      key={v.id}
-                      variant="destructive"
-                      className="min-h-11 text-base"
-                      onClick={() =>
-                        demarrer(async () => {
-                          const r = await actionSupprimerVue({ id: v.id });
-                          if (!r.ok) return void toast.error(r.erreur);
-                          toast.success(`Vue « ${v.nom} » supprimée`);
-                          router.refresh();
-                        })
-                      }
-                    >
-                      {v.nom}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
+
+      {enQuestion && <p className="text-muted-foreground">Je cherche…</p>}
+      {!enQuestion && reponse && <ReponseQuestion reponse={reponse} poser={poser} />}
 
       {/* Puces des filtres actifs */}
       {puces.length > 0 && (
@@ -468,7 +478,10 @@ export function TableauBeneficiaires({
               <button
                 type="button"
                 onClick={() => {
-                  if (p.cle === "recherche") setSaisie("");
+                  if (p.cle === "recherche" || p.cle === "ids") {
+                    setQuestion("");
+                    setReponse(null);
+                  }
                   setFiltre(retirerCritere(filtre, p.cle));
                 }}
                 className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-primary/30 bg-accent px-3 font-medium text-primary outline-none hover:border-primary focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -483,7 +496,8 @@ export function TableauBeneficiaires({
             <Button
               variant="ghost"
               onClick={() => {
-                setSaisie("");
+                setQuestion("");
+                setReponse(null);
                 setFiltre(FILTRE_VIDE);
               }}
             >
@@ -531,6 +545,21 @@ export function TableauBeneficiaires({
                 </p>
                 <IndicateurPresence ressource={ressource} />
                 <div className="ml-auto flex flex-wrap gap-2">
+                  {mode === "tableau" && (defilement.gauche || defilement.droite) && (
+                    <div role="group" aria-label="Voir les autres colonnes" className="flex gap-1 max-md:hidden">
+                      <Button variant="outline" size="icon" aria-label="Colonnes de gauche" disabled={!defilement.gauche} onClick={() => defilement.defiler(-1)}>
+                        <ChevronLeft aria-hidden />
+                      </Button>
+                      <Button variant="outline" size="icon" aria-label="Colonnes de droite" disabled={!defilement.droite} onClick={() => defilement.defiler(1)}>
+                        <ChevronRight aria-hidden />
+                      </Button>
+                    </div>
+                  )}
+                  {mode === "tableau" && (
+                    <div className="max-md:hidden">
+                      <ChoixColonnes colonnes={colonnes} disponibles={disponibles} onChange={setColonnes} />
+                    </div>
+                  )}
                   {droits.ecrire && (
                     <Button variant="outline" disabled={total === 0} onClick={() => setFenetre("liste")}>
                       Enregistrer la liste
@@ -613,7 +642,13 @@ export function TableauBeneficiaires({
           ) : (
             <>
               {/* Desktop et tablette : tableau */}
-              <div className="relative overflow-x-auto max-md:hidden">
+              <div
+                ref={defilement.zone}
+                tabIndex={0}
+                role="region"
+                aria-label="Tableau des bénéficiaires (défilement avec les flèches du clavier)"
+                className="relative max-h-[calc(100dvh-12rem)] overflow-auto outline-none focus-visible:ring-3 focus-visible:ring-ring/50 max-md:hidden"
+              >
                 <table className="w-full text-left">
                   <thead>
                     {table.getHeaderGroups().map((hg) => (
@@ -629,8 +664,9 @@ export function TableauBeneficiaires({
                               scope="col"
                               aria-sort={t ? (t.sens === "asc" ? "ascending" : "descending") : undefined}
                               className={cn(
-                                "h-12 px-2.5 text-sm font-semibold whitespace-nowrap text-muted-foreground",
-                                h.column.id === "selection" && "w-12 pl-4",
+                                "sticky top-0 z-20 h-12 bg-card px-2.5 text-sm font-semibold whitespace-nowrap text-muted-foreground shadow-[inset_0_-1px_0_var(--border)]",
+                                h.column.id === "selection" && "left-0 z-30 w-12 min-w-12 pl-4",
+                                h.column.id === "nom" && cn("z-30 shadow-[inset_-1px_-1px_0_var(--border)]", droits.ecrire ? "left-12" : "left-0"),
                                 h.column.id === "actions" && "w-14",
                               )}
                             >
@@ -659,7 +695,7 @@ export function TableauBeneficiaires({
                   </thead>
                   <tbody className="divide-y">
                     {table.getRowModel().rows.map((row) => (
-                      <tr key={row.id} className={cn("hover:bg-background", row.getIsSelected() && "bg-accent/60 hover:bg-accent")}>
+                      <tr key={row.id} className={cn("group hover:bg-background", row.getIsSelected() && "bg-accent/60 hover:bg-accent")}>
                         {row.getVisibleCells().map((cell) => (
                           <td
                             key={cell.id}
@@ -668,6 +704,11 @@ export function TableauBeneficiaires({
                               cell.column.id === "adresse" ? "min-w-40 max-w-60" : ["tags", "assignes", "handicap"].includes(cell.column.id) ? "min-w-24 max-w-52" : "whitespace-nowrap",
                               cell.column.id === "selection" && "pl-4",
                               cell.column.id === "actions" && "pr-2 text-right",
+                              // La case à cocher et le nom restent visibles quand on fait défiler les colonnes.
+                              (cell.column.id === "selection" || cell.column.id === "nom") &&
+                                cn("sticky z-10", row.getIsSelected() ? "bg-accent" : "bg-card group-hover:bg-background"),
+                              cell.column.id === "selection" && "left-0 w-12 min-w-12",
+                              cell.column.id === "nom" && cn("shadow-[inset_-1px_0_0_var(--border)]", droits.ecrire ? "left-12" : "left-0"),
                             )}
                           >
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -754,7 +795,6 @@ export function TableauBeneficiaires({
         <FenetreExport ids={idsSelectionnes} total={total} filtre={filtre} listeId={listeId} colonnesVisibles={colonnes} accesSante={droits.sante} ouvert fermer={() => setFenetre(null)} />
       )}
       {fenetre === "liste" && <FenetreListe ids={idsSelectionnes} total={total} filtre={filtre} listeId={listeId} ouvert fermer={() => setFenetre(null)} />}
-      {fenetre === "vue" && <FenetreVue config={{ colonnes, filtre, tri }} ouvert fermer={() => setFenetre(null)} onEnregistree={() => router.refresh()} />}
       {ACTIONS_GROUPEES_EXTERNES.map((a) =>
         fenetre === `externe:${a.id}` ? <a.Fenetre key={a.id} ids={idsSelectionnes} filtre={filtre} listeId={listeId} ouvert fermer={() => setFenetre(null)} /> : null,
       )}

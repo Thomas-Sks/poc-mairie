@@ -18,17 +18,17 @@ export async function PageCreationCampagne({ ctx, alerteId, listeIdInitiale }: {
   return (
     <Page className="max-w-4xl">
       <EnTetePage
-        retour={<LienRetour href="/alertes">Alertes et campagnes</LienRetour>}
-        titre="Nouvelle campagne d'appels"
+        retour={<LienRetour href="/alertes">Alertes</LienRetour>}
+        titre="Lancer les appels"
         description={
           <span className="flex flex-wrap items-center gap-2">
-            {ALERTE_LIBELLES[alerte.type]} <Pastille ton={NIVEAU_ALERTE_TONS[alerte.niveau]}>{NIVEAU_ALERTE_LIBELLES[alerte.niveau]}</Pastille>
+            Étape 2 sur 2 · {ALERTE_LIBELLES[alerte.type]} <Pastille ton={NIVEAU_ALERTE_TONS[alerte.niveau]}>{NIVEAU_ALERTE_LIBELLES[alerte.niveau]}</Pastille>
             depuis le {formaterDate(alerte.debut)} · {alerte.perimetre}
           </span>
         }
       />
       {alerte.statut === "cloturee" ? (
-        <Bandeau ton="warn">Cette alerte est clôturée : impossible d&apos;y ajouter une campagne.</Bandeau>
+        <Bandeau ton="warn">Cette alerte est terminée : impossible de lancer de nouveaux appels.</Bandeau>
       ) : (
         <FormulaireCampagne
           alerte={{ id: alerte.id, type: alerte.type }}

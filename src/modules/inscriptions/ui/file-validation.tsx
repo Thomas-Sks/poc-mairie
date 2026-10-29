@@ -14,7 +14,7 @@ export function FileValidation({ file, traitees, maintenant }: { file: Inscripti
     <Page>
       <EnTetePage
         titre="Inscriptions à valider"
-        description="Demandes reçues par le formulaire en ligne, de la plus prioritaire à la moins prioritaire. Le score n'est pas visible du demandeur."
+        description="Demandes reçues par le formulaire en ligne, les plus prioritaires d'abord."
         actions={
           <>
             <Link href="/inscription/qr" className={buttonVariants({ variant: "ghost" })}>

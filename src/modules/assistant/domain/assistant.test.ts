@@ -6,7 +6,7 @@ import type { Contexte } from "@/shared/application/contexte";
 import { interpreter } from "../application/repondre";
 import type { InterpretationsRepository, Interpreteur } from "../application/ports";
 import { appelDepuisAnalyseur, cleQuestion, lireAppel } from "./appel";
-import { decrireCompris, reponseFiches, reponseNombre, reponsePersonnes } from "./reponse";
+import { chiffrer, decrireCompris, reponseChiffre, reponsePersonnes } from "./reponse";
 
 const REF: Referentiels = { quartiers: ["Bourg", "Marais", "Délivrance"], campagnes: [] };
 
@@ -117,20 +117,21 @@ describe("gabarits de réponse", () => {
       { cle: "Bourg", libelle: "Bourg", n: 9, nComparaison: null },
       { cle: "Marais", libelle: "Marais", n: 3, nComparaison: null },
     ] }, true);
-    const rep = reponseNombre(d, r, REF);
-    expect(rep).toMatchObject({ type: "nombre", phrase: "12 personnes" });
-    if (rep.type === "nombre") expect(rep.lignes).toEqual([
-      { libelle: "Bourg", effectif: "9", part: 1 },
-      { libelle: "Marais", effectif: "< 5", part: 0 },
-    ]);
-    expect(reponseNombre(d, { ...r, total: 1 }, REF)).toMatchObject({ phrase: "1 personne" });
+    expect(chiffrer(d, r)).toEqual({
+      phrase: "12 personnes",
+      lignes: [
+        { libelle: "Bourg", effectif: "9", part: 1 },
+        { libelle: "Marais", effectif: "< 5", part: 0 },
+      ],
+    });
+    expect(chiffrer(d, { ...r, total: 1 }).phrase).toBe("1 personne");
+    expect(chiffrer(d, { ...r, total: 0, lignes: [] }).phrase).toBe("0 personne");
   });
 
-  it("annonce une liste tronquée et n'offre le téléchargement qu'avec le droit", () => {
-    const p = { id: "1", civilite: "Mme", nom: "A", prenom: "B", age: 80, adresse: "1 rue X", telephone: null, priorite: "P1" as const };
-    expect(reponsePersonnes(d, { total: 250, personnes: [p] }, REF, true)).toMatchObject({ phrase: "250 personnes. Les 1 premières sont affichées ci-dessous.", telechargeable: true });
-    expect(reponsePersonnes(d, { total: 0, personnes: [] }, REF, true)).toMatchObject({ phrase: "Aucune personne ne correspond.", telechargeable: false });
-    expect(reponsePersonnes(d, { total: 1, personnes: [p] }, REF, false)).toMatchObject({ telechargeable: false });
-    expect(reponseFiches("dupont", [])).toMatchObject({ phrase: "Je ne trouve personne au nom de « dupont »." });
+  it("filtre le tableau sur les personnes, ou répond en une ligne pour les autres sujets", () => {
+    const r = appliquerSecret({ total: 2, totalComparaison: null, decoupage: null, lignes: [] }, false);
+    expect(reponsePersonnes(d, r, ["a", "b"], REF)).toMatchObject({ type: "personnes", ids: ["a", "b"], phrase: "2 personnes" });
+    const appels = { ...definitionVide("appels_campagne"), filtres: [] };
+    expect(reponseChiffre(appels, r, REF)).toMatchObject({ type: "chiffre", phrase: "2 appels", compris: ["Appels de campagne"] });
   });
 });

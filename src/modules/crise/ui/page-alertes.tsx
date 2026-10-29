@@ -4,38 +4,33 @@ import { BellRing, ChevronRight, FileText, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formaterDate, formaterDateLongue } from "@/shared/domain/dates";
 import { ALERTE_LIBELLES } from "@/shared/domain/vocabulaire";
-import { EnTetePage, EtatVide, Libelle, Page, Pastille, Section, Surface } from "@/shared/ui/elements";
+import { EnTetePage, EtatVide, Page, Pastille, Section, Surface } from "@/shared/ui/elements";
 import type { Contexte } from "@/shared/application/contexte";
 import { casDUsageCrise } from "../infrastructure";
 import type { Alerte, CampagneResume } from "../application/ports";
 import { BoutonCloturer } from "./bouton-cloturer";
-import { CANAL_LIBELLES, NIVEAU_ALERTE_LIBELLES, NIVEAU_ALERTE_TONS } from "./libelles";
+import { NIVEAU_ALERTE_LIBELLES, NIVEAU_ALERTE_TONS } from "./libelles";
 
 const periode = (a: Alerte) => (a.finPrevue ? `Du ${formaterDate(a.debut)} au ${formaterDate(a.finPrevue)}` : `Depuis le ${formaterDateLongue(a.debut)}`);
 
-function LigneCampagne({ c, rapport }: { c: CampagneResume; rapport?: boolean }) {
+/**
+ * Une série d'appels : en cours on la suit, terminée on lit son bilan.
+ * Son nom (« Canicule – 29/10/2026 ») redit l'alerte : on ne l'affiche que s'il y a plusieurs séries.
+ */
+function LigneCampagne({ c, terminee, avecNom }: { c: CampagneResume; terminee?: boolean; avecNom: boolean }) {
   return (
     <li className="flex flex-wrap items-center justify-between gap-3 py-3">
       <div className="flex min-w-0 flex-col">
-        <Link href={`/campagnes/${c.id}`} className="font-semibold text-primary underline-offset-4 hover:underline">
-          {c.nom}
-        </Link>
-        <span className="text-sm text-muted-foreground">
-          {c.nbPersonnes} personnes · {CANAL_LIBELLES[c.canal]}
+        <span className="font-semibold">
+          {c.nbPersonnes} personnes {terminee ? "appelées" : "à appeler"}
         </span>
+        {avecNom && <span className="text-sm text-muted-foreground">{c.nom}</span>}
       </div>
-      <div className="flex flex-wrap gap-2">
-        {rapport && (
-          <Link href={`/campagnes/${c.id}/rapport`} className={buttonVariants({ variant: "outline" })}>
-            <FileText aria-hidden />
-            Rapport
-          </Link>
-        )}
-        <Link href={`/campagnes/${c.id}`} className={buttonVariants({ variant: rapport ? "ghost" : "outline" })}>
-          {rapport ? "Bilan" : "Tableau de bord"}
-          <ChevronRight aria-hidden />
-        </Link>
-      </div>
+      <Link href={terminee ? `/campagnes/${c.id}/rapport` : `/campagnes/${c.id}`} className={buttonVariants({ variant: terminee ? "ghost" : "default" })}>
+        {terminee ? <FileText aria-hidden /> : null}
+        {terminee ? "Bilan" : "Suivre les appels"}
+        {terminee ? null : <ChevronRight aria-hidden />}
+      </Link>
     </li>
   );
 }
@@ -45,8 +40,8 @@ export async function PageAlertes({ ctx }: { ctx: Contexte }) {
   return (
     <Page>
       <EnTetePage
-        titre="Alertes et campagnes"
-        description="Déclenchez une alerte, lancez une campagne d'appels et suivez la couverture des personnes en temps réel."
+        titre="Alertes"
+        description="1. Déclenchez l'alerte (canicule, grand froid…). 2. Lancez les appels. 3. Suivez qui a été joint."
         actions={
           peutDeclencher && (
             <Link href="/alertes/nouvelle" className={buttonVariants({ size: "lg" })}>
@@ -60,7 +55,7 @@ export async function PageAlertes({ ctx }: { ctx: Contexte }) {
       <Section titre="En cours">
         {enCours.length === 0 ? (
           <Surface className="px-5">
-            <EtatVide titre="Aucune alerte en cours" description="Lorsqu'une vigilance est annoncée, déclenchez une alerte pour organiser les appels." />
+            <EtatVide titre="Aucune alerte en cours" description="Quand Météo-France annonce une vigilance, déclenchez une alerte pour organiser les appels." />
           </Surface>
         ) : (
           enCours.map((a) => (
@@ -79,21 +74,20 @@ export async function PageAlertes({ ctx }: { ctx: Contexte }) {
                   {a.message && <p className="max-w-[70ch]">{a.message}</p>}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link href={`/alertes/${a.id}/campagne`} className={buttonVariants({ variant: a.campagnes.length ? "outline" : "default" })}>
+                  <Link href={`/alertes/${a.id}/campagne`} className={buttonVariants({ variant: a.campagnes.length ? "ghost" : "default" })}>
                     <Plus aria-hidden />
-                    Créer une campagne
+                    {a.campagnes.length ? "Lancer d'autres appels" : "Lancer les appels"}
                   </Link>
                   {peutDeclencher && <BoutonCloturer alerteId={a.id} libelle={ALERTE_LIBELLES[a.type]} />}
                 </div>
               </div>
               <div className="flex flex-col border-t pt-3">
-                <Libelle>Campagnes</Libelle>
                 {a.campagnes.length === 0 ? (
-                  <p className="py-3 text-muted-foreground">Aucune campagne lancée pour cette alerte.</p>
+                  <p className="py-3 text-muted-foreground">Aucun appel lancé pour l&apos;instant.</p>
                 ) : (
                   <ul className="divide-y">
                     {a.campagnes.map((c) => (
-                      <LigneCampagne key={c.id} c={c} />
+                      <LigneCampagne key={c.id} c={c} avecNom={a.campagnes.length > 1} />
                     ))}
                   </ul>
                 )}
@@ -105,7 +99,7 @@ export async function PageAlertes({ ctx }: { ctx: Contexte }) {
 
       <Section titre="Alertes passées">
         {passees.length === 0 ? (
-          <p className="text-muted-foreground">Aucune alerte clôturée.</p>
+          <p className="text-muted-foreground">Aucune alerte terminée.</p>
         ) : (
           <Surface className="px-5">
             <ul className="divide-y">
@@ -120,7 +114,7 @@ export async function PageAlertes({ ctx }: { ctx: Contexte }) {
                   </div>
                   <ul className={cn("divide-y", a.campagnes.length === 0 && "hidden")}>
                     {a.campagnes.map((c) => (
-                      <LigneCampagne key={c.id} c={c} rapport />
+                      <LigneCampagne key={c.id} c={c} terminee avecNom={a.campagnes.length > 1} />
                     ))}
                   </ul>
                 </li>

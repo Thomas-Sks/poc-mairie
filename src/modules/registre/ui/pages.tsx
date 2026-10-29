@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { Contexte } from "@/shared/application/contexte";
 import { formaterDate } from "@/shared/domain/dates";
 import { peut } from "@/shared/domain/permissions";
-import { EnTetePage, EtatVide, LienRetour, Page, Pastille, Surface } from "@/shared/ui/elements";
+import { EnTetePage, EtatVide, LienRetour, Page, Surface } from "@/shared/ui/elements";
 import { contexteAvec } from "@/shared/infrastructure/session";
 import { decrireFiltre } from "../domain/filtre";
 import { ListeIntrouvable } from "../application/rechercher-beneficiaire-ids";
@@ -24,15 +24,15 @@ const droitsDe = (ctx: Contexte): Droits => ({
   archiver: peut(ctx.utilisateur.role, "fiches.archiver"),
 });
 
-export async function PageBeneficiaires() {
+export async function PageBeneficiaires({ question }: { question?: string } = {}) {
   const ctx = await contexteAvec("fiches.lire");
-  const [referentiels, vues] = await Promise.all([casDUsage.chargerReferentiels(ctx), casDUsage.listerVues(ctx)]);
+  const referentiels = await casDUsage.chargerReferentiels(ctx);
   const droits = droitsDe(ctx);
   return (
     <Page className="max-w-none">
       <EnTetePage
         titre="Bénéficiaires"
-        description="Le registre des personnes suivies. Filtrez, assignez, appelez ou enregistrez une liste."
+        description="Posez votre question : le tableau et la carte n'affichent que les personnes concernées."
         actions={
           droits.ecrire && (
             <Button render={<Link href="/beneficiaires/nouveau" />} nativeButton={false}>
@@ -44,8 +44,8 @@ export async function PageBeneficiaires() {
       <TableauBeneficiaires
         referentiels={referentiels}
         droits={droits}
-        vues={vues}
         ressource="beneficiaires"
+        questionInitiale={question}
       />
     </Page>
   );
@@ -59,7 +59,7 @@ export async function PageListes() {
     <Page>
       <EnTetePage
         titre="Listes"
-        description="Listes enregistrées depuis le tableau des bénéficiaires : dynamiques (le filtre est réévalué) ou figées (instantané pour une campagne)."
+        description="Les listes que vous avez enregistrées depuis Bénéficiaires."
         actions={
           <Button variant="outline" render={<Link href="/beneficiaires" />} nativeButton={false}>
             Créer depuis le tableau
@@ -77,17 +77,10 @@ export async function PageListes() {
         ) : (
           <ul className="divide-y">
             {listes.map((l) => {
-              const criteres = decrireFiltre(l.filtre, { utilisateurs: noms }).map((p) => p.libelle);
               return (
                 <li key={l.id}>
                   <Link href={`/listes/${l.id}`} className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 hover:bg-background">
-                    <div className="flex min-w-0 flex-1 basis-72 flex-col gap-1">
-                      <span className="font-semibold text-primary">{l.nom}</span>
-                      <span className="text-[0.9375rem] text-muted-foreground">
-                        {criteres.length > 0 ? criteres.join(" · ") : l.type === "figee" ? "Sélection manuelle" : "Tout le registre"}
-                      </span>
-                    </div>
-                    <Pastille ton={l.type === "figee" ? "neutre" : "accent"}>{l.type === "figee" ? "Figée" : "Dynamique"}</Pastille>
+                    <span className="min-w-0 flex-1 basis-72 font-semibold text-primary">{l.nom}</span>
                     <span className="tabular w-32 font-medium">
                       {l.nb} personne{l.nb > 1 ? "s" : ""}
                     </span>
@@ -115,14 +108,14 @@ export async function PageListe({ id }: { id: string }) {
     if (e instanceof ListeIntrouvable) notFound();
     throw e;
   }
-  const [referentiels, vues] = await Promise.all([casDUsage.chargerReferentiels(ctx), casDUsage.listerVues(ctx)]);
+  const referentiels = await casDUsage.chargerReferentiels(ctx);
   const droits = droitsDe(ctx);
   const noms = Object.fromEntries(referentiels.equipe.map((m) => [m.id, `${m.prenom} ${m.nom}`]));
   const criteres = decrireFiltre(liste.filtre, { utilisateurs: noms }).map((p) => p.libelle);
+  const enregistree = `Enregistrée le ${formaterDate(liste.createdAt.toISOString().slice(0, 10))}`;
+  // Liste dynamique : on rappelle ses critères, sauf s'ils redisent son nom.
   const description =
-    liste.type === "figee"
-      ? `Liste figée de ${liste.beneficiaireIds.length} personne${liste.beneficiaireIds.length > 1 ? "s" : ""}, enregistrée le ${formaterDate(liste.createdAt.toISOString().slice(0, 10))}.`
-      : `Liste dynamique : ${criteres.join(" · ") || "tout le registre"}. Le filtre est réévalué à chaque ouverture.`;
+    liste.type === "dynamique" && criteres.length > 0 && criteres.join(" · ") !== liste.nom ? `${enregistree} · ${criteres.join(" · ")}` : enregistree;
   return (
     <Page className="max-w-none">
       <EnTetePage
@@ -131,7 +124,7 @@ export async function PageListe({ id }: { id: string }) {
         description={description}
         actions={droits.ecrire && <ActionsListe id={liste.id} nom={liste.nom} />}
       />
-      <TableauBeneficiaires referentiels={referentiels} droits={droits} vues={vues} listeId={liste.id} ressource={`liste:${liste.id}`} />
+      <TableauBeneficiaires referentiels={referentiels} droits={droits} listeId={liste.id} ressource={`liste:${liste.id}`} />
     </Page>
   );
 }

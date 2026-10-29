@@ -58,8 +58,8 @@ export async function PageRapport({ ctx, campagneId }: { ctx: Contexte; campagne
     <Page className="rapport max-w-5xl print:max-w-none print:p-0">
       <style>{STYLE_IMPRESSION}</style>
       <EnTetePage
-        retour={<LienRetour href={`/campagnes/${campagne.id}`}>Tableau de bord de la campagne</LienRetour>}
-        titre={`Rapport de campagne : ${campagne.nom}`}
+        retour={<LienRetour href={`/campagnes/${campagne.id}`}>Suivi des appels</LienRetour>}
+        titre={`Bilan : ${campagne.nom}`}
         description={`${rapport.commune.structureNom} · ${rapport.commune.nom} · généré le ${formaterDateHeure(rapport.genereLe)}`}
         actions={<BoutonImprimer />}
       />

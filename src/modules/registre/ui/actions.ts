@@ -10,7 +10,7 @@ import { AccesRefuse } from "@/shared/domain/permissions";
 import { MOTIFS_ARCHIVAGE } from "@/shared/domain/vocabulaire";
 import { obtenirContexte } from "@/shared/infrastructure/session";
 import { normaliserFiltre, schemaFiltre, type Filtre } from "../domain/filtre";
-import { COLONNES, RESULTATS_APPEL_RAPIDE, schemaConfigVue, STATUTS_GROUPES, lireConfigVue } from "../domain/tableau";
+import { COLONNES, RESULTATS_APPEL_RAPIDE, STATUTS_GROUPES } from "../domain/tableau";
 import { ErreurMetier } from "../application/actions-groupees";
 import { ListeIntrouvable } from "../application/rechercher-beneficiaire-ids";
 import { casDUsage } from "../infrastructure";
@@ -142,18 +142,4 @@ export async function actionRenommerListe(entree: unknown) {
 
 export async function actionSupprimerListe(entree: unknown) {
   return executer(async () => casDUsage.supprimerListe(await obtenirContexte(), z.object({ id: z.uuid() }).parse(entree).id), ["/listes"]);
-}
-
-export async function actionEnregistrerVue(entree: unknown) {
-  return executer(
-    async () => {
-      const e = z.object({ nom: z.string().trim().min(1).max(80), config: schemaConfigVue }).parse(entree);
-      return casDUsage.enregistrerVue(await obtenirContexte(), { nom: e.nom, config: lireConfigVue(e.config) });
-    },
-    ["/beneficiaires", "/listes"],
-  );
-}
-
-export async function actionSupprimerVue(entree: unknown) {
-  return executer(async () => casDUsage.supprimerVue(await obtenirContexte(), z.object({ id: z.uuid() }).parse(entree).id), ["/beneficiaires", "/listes"]);
 }

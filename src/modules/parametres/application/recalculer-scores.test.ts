@@ -36,7 +36,6 @@ function depot(fiches: FichePourScore[], grille = GRILLE_PAR_DEFAUT) {
     enregistrer: async () => {},
     fichesActivesPourScore: async () => fiches,
     enregistrerScores: async (_c, s) => void enregistres.push(...s),
-    equipe: async () => [],
   };
   return { repo, enregistres };
 }

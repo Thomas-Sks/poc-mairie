@@ -6,28 +6,20 @@ import { DECOUPAGES, SUJET_LIBELLES, SUJET_UNITES } from "@/modules/statistiques
 import { decrirePeriode } from "@/modules/statistiques/domain/periodes";
 import { decrireFiltre, type DefinitionRequete, type Referentiels } from "@/modules/statistiques/domain/requete";
 import { formaterEffectif, type ResultatAffiche } from "@/modules/statistiques/domain/secret";
-import type { NiveauPriorite } from "@/shared/domain/vocabulaire";
-
-/** Nombre maximal de personnes affichées dans une réponse (le téléchargement Excel les contient toutes). */
-export const PERSONNES_AFFICHEES = 200;
-
-export type PersonneListee = {
-  id: string;
-  civilite: string;
-  nom: string;
-  prenom: string;
-  age: number;
-  adresse: string;
-  telephone: string | null;
-  priorite: NiveauPriorite;
-};
 
 export type LigneChiffree = { libelle: string; effectif: string; part: number };
 
-export type ReponseAssistant =
-  | { type: "nombre"; compris: string[]; phrase: string; lignes: LigneChiffree[] }
-  | { type: "personnes"; compris: string[]; phrase: string; personnes: PersonneListee[]; total: number; telechargeable: boolean }
-  | { type: "fiches"; phrase: string; personnes: PersonneListee[] }
+/**
+ * Réponse affichée au-dessus du tableau des bénéficiaires.
+ * - `personnes` : le tableau et la carte se limitent à ces fiches (on y exporte, assigne, appelle) ;
+ * - `chiffre` : un total (et sa répartition) sur autre chose que des personnes (appels, inscriptions…) ;
+ * - `recherche` : la question est un nom ou une adresse, elle devient une simple recherche ;
+ * - `message` : question incomprise ou non autorisée.
+ */
+export type ReponseRegistre =
+  | { type: "personnes"; ids: string[]; phrase: string; compris: string[]; lignes: LigneChiffree[] }
+  | { type: "chiffre"; phrase: string; compris: string[]; lignes: LigneChiffree[] }
+  | { type: "recherche"; texte: string }
   | { type: "message"; phrase: string; suggestions: readonly string[] };
 
 const pluriel = (n: number, [un, plusieurs]: readonly [string, string]) => (n <= 1 ? un : plusieurs);
@@ -42,53 +34,30 @@ export function decrireCompris(d: DefinitionRequete, r: Referentiels): string[] 
   return puces;
 }
 
-export function reponseNombre(d: DefinitionRequete, r: ResultatAffiche, referentiels: Referentiels): ReponseAssistant {
+/** Total (« 12 personnes », « < 5 appels ») et répartition, secret statistique déjà appliqué. */
+export function chiffrer(d: DefinitionRequete, r: ResultatAffiche): { phrase: string; lignes: LigneChiffree[] } {
   const unite = SUJET_UNITES[d.sujet];
-  const total = r.total === null ? `${formaterEffectif(null)} ${unite[1]}` : `${formaterEffectif(r.total)} ${pluriel(r.total, unite)}`;
+  const phrase = r.total === null ? `${formaterEffectif(null)} ${unite[1]}` : `${formaterEffectif(r.total)} ${pluriel(r.total, unite)}`;
   const max = Math.max(1, ...r.lignes.map((l) => l.n ?? 0));
-  return {
-    type: "nombre",
-    compris: decrireCompris(d, referentiels),
-    phrase: total,
-    lignes: r.lignes.map((l) => ({ libelle: l.libelle, effectif: formaterEffectif(l.n), part: (l.n ?? 0) / max })),
-  };
+  return { phrase, lignes: r.lignes.map((l) => ({ libelle: l.libelle, effectif: formaterEffectif(l.n), part: (l.n ?? 0) / max })) };
 }
 
-export function reponsePersonnes(
-  d: DefinitionRequete,
-  resultat: { total: number; personnes: PersonneListee[] },
-  referentiels: Referentiels,
-  telechargeable: boolean,
-): ReponseAssistant {
-  const { total, personnes } = resultat;
-  const phrase =
-    total === 0
-      ? "Aucune personne ne correspond."
-      : total > personnes.length
-        ? `${total.toLocaleString("fr-FR")} personnes. Les ${personnes.length} premières sont affichées ci-dessous.`
-        : `${total.toLocaleString("fr-FR")} ${pluriel(total, ["personne", "personnes"])}.`;
-  return { type: "personnes", compris: decrireCompris(d, referentiels), phrase, personnes, total, telechargeable: telechargeable && total > 0 };
+export function reponsePersonnes(d: DefinitionRequete, r: ResultatAffiche, ids: string[], referentiels: Referentiels): ReponseRegistre {
+  return { type: "personnes", ids, compris: decrireCompris(d, referentiels), ...chiffrer(d, r) };
 }
 
-export function reponseFiches(texte: string, personnes: PersonneListee[]): ReponseAssistant {
-  return {
-    type: "fiches",
-    phrase:
-      personnes.length === 0
-        ? `Je ne trouve personne au nom de « ${texte} ».`
-        : `${personnes.length} ${pluriel(personnes.length, ["fiche trouvée", "fiches trouvées"])} pour « ${texte} ».`,
-    personnes,
-  };
+export function reponseChiffre(d: DefinitionRequete, r: ResultatAffiche, referentiels: Referentiels): ReponseRegistre {
+  return { type: "chiffre", compris: decrireCompris(d, referentiels), ...chiffrer(d, r) };
 }
 
-export const reponseIncomprise = (suggestions: readonly string[]): ReponseAssistant => ({
+export const reponseIncomprise = (suggestions: readonly string[]): ReponseRegistre => ({
   type: "message",
   phrase: "Je ne sais pas encore répondre à cette question. Essayez par exemple :",
   suggestions,
 });
 
-export const reponseNonAutorisee = (): ReponseAssistant => ({
+export const reponseNonAutorisee = (): ReponseRegistre => ({
   type: "message",
-  phrase: "Votre compte ne permet pas d'afficher la liste nominative des personnes. Vous pouvez demander « Combien… ».",
+  phrase: "Votre compte ne permet pas d'afficher la liste nominative des personnes.",
   suggestions: [],
 });

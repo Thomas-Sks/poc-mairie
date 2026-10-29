@@ -65,7 +65,6 @@ export type Filtre = {
   /** Au moins un des tags. */
   tags?: string[];
   dernierContact?: DernierContact;
-  /** E1-US5 : fiche non vérifiée depuis plus de N mois (à défaut de vérification, depuis l'inscription). */
   /** Indisponibilité en cours aujourd'hui (vacances, hospitalisation…). */
   indisponible?: boolean;
   /** Assigné à l'un de ces utilisateurs (E8-US6). */
@@ -73,8 +72,10 @@ export type Filtre = {
   rues?: FiltreRue[];
   quartiers?: string[];
   zone?: ZoneCarte;
-  /** Restriction à un ensemble de fiches (liste figée). */
+  /** Restriction à un ensemble de fiches (liste figée, ou réponse de l'assistant). */
   ids?: string[];
+  /** Question posée à l'assistant qui a donné `ids` (affichée à la place du nombre de personnes). */
+  question?: string;
 };
 
 // ─── Validation (frontière : listes, vues, API) ───────────────────────────────
@@ -121,6 +122,7 @@ export const schemaFiltre = z.object({
   quartiers: z.array(z.string().trim().min(1).max(100)).optional(),
   zone: schemaZone.optional(),
   ids: z.array(z.uuid()).max(100_000).optional(),
+  question: z.string().trim().min(1).max(300).optional(),
 });
 
 export const FILTRE_VIDE: Filtre = { version: VERSION_FILTRE };
@@ -173,6 +175,7 @@ export function normaliserFiltre(filtre: Filtre): Filtre {
   if (quartiers) f.quartiers = quartiers;
   if (filtre.zone) f.zone = filtre.zone;
   if (filtre.ids) f.ids = [...new Set(filtre.ids)];
+  if (filtre.ids && filtre.question) f.question = filtre.question;
   return f;
 }
 
@@ -364,7 +367,11 @@ export function decrireFiltre(filtre: Filtre, noms: { utilisateurs?: Record<stri
   f.rues?.forEach((r, i) => puces.push({ cle: `rues.${i}`, libelle: libelleRue(r) }));
   if (f.quartiers) puces.push({ cle: "quartiers", libelle: `Quartier : ${enumerer(f.quartiers)}` });
   if (f.zone) puces.push({ cle: "zone", libelle: f.zone.type === "cercle" ? `Cercle de ${Math.round(f.zone.rayonMetres)} m sur la carte` : "Zone dessinée sur la carte" });
-  if (f.ids) puces.push({ cle: "ids", libelle: `${f.ids.length} personne${f.ids.length > 1 ? "s" : ""} choisie${f.ids.length > 1 ? "s" : ""}` });
+  if (f.ids)
+    puces.push({
+      cle: "ids",
+      libelle: f.question ? `« ${f.question} »` : `${f.ids.length} personne${f.ids.length > 1 ? "s" : ""} choisie${f.ids.length > 1 ? "s" : ""}`,
+    });
   return puces;
 }
 
@@ -376,6 +383,7 @@ export function retirerCritere(filtre: Filtre, cle: CleCritere): Filtre {
     f.rues = f.rues?.filter((_, i) => i !== index);
   } else {
     delete f[cle as Exclude<CleCritere, `rues.${number}`>];
+    if (cle === "ids") delete f.question;
   }
   return normaliserFiltre(f);
 }

@@ -33,7 +33,7 @@ const MATRICE: Record<Role, readonly Permission[]> = {
     "campagnes.gerer",
     "statistiques.lire",
     "statistiques.nominatif",
-    // Télécharger les listes de l'assistant (Excel) et du registre (CSV).
+    // Télécharger les listes du registre (CSV).
     "export",
   ],
   benevole: ["appel.benevole"],

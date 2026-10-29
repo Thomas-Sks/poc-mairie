@@ -1,6 +1,5 @@
 import type { Referentiels } from "@/modules/statistiques/domain/requete";
 import type { DateISO } from "@/shared/domain/dates";
-import type { PersonneListee } from "../domain/reponse";
 
 export type SourceInterpretation = "ia" | "analyseur";
 
@@ -17,13 +16,4 @@ export interface InterpretationsRepository {
  */
 export interface Interpreteur {
   interpreter(question: string, contexte: { referentiels: Referentiels; jour: DateISO }): Promise<unknown | null>;
-}
-
-export interface Annuaire {
-  /** Fiches actives dont le nom, le prénom ou la rue contient le texte (10 au plus). */
-  chercher(communeId: string, texte: string, jour: DateISO): Promise<PersonneListee[]>;
-}
-
-export interface JournalExports {
-  enregistrer(communeId: string, utilisateurId: string, details: { question: string; nb: number }): Promise<void>;
 }

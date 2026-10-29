@@ -1,20 +1,10 @@
 import "server-only";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/shared/infrastructure/db/client";
-import { beneficiaires, communes, contacts, foyers, liensCercle, prisesEnCharge, utilisateurs } from "@/shared/infrastructure/db/schema";
+import { beneficiaires, communes, contacts, foyers, liensCercle, prisesEnCharge } from "@/shared/infrastructure/db/schema";
 import type { EntreeFaits } from "@/modules/beneficiaires/domain/faits-priorite";
 import { completerGrille } from "@/shared/domain/priorite";
 import type { ParametresRepository } from "../application/ports";
-
-const colonnesMembre = {
-  id: utilisateurs.id,
-  prenom: utilisateurs.prenom,
-  nom: utilisateurs.nom,
-  email: utilisateurs.email,
-  telephone: utilisateurs.telephone,
-  role: utilisateurs.role,
-  actif: utilisateurs.actif,
-};
 
 function grouper<T extends { beneficiaireId: string }>(lignes: T[]): Map<string, T[]> {
   const m = new Map<string, T[]>();
@@ -99,9 +89,5 @@ export const parametresRepositoryDrizzle: ParametresRepository = {
           .where(and(eq(beneficiaires.communeId, communeId), eq(beneficiaires.id, s.id)));
       }
     });
-  },
-
-  async equipe(communeId) {
-    return db.select(colonnesMembre).from(utilisateurs).where(eq(utilisateurs.communeId, communeId)).orderBy(asc(utilisateurs.createdAt));
   },
 };

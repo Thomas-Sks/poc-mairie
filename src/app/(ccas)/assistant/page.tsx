@@ -1,9 +1,7 @@
-import type { Metadata } from "next";
-import { PageAssistant } from "@/modules/assistant/ui/page-assistant";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Assistant" };
-
+/** L'assistant est intégré au registre (page Bénéficiaires) : les anciens liens y mènent. */
 export default async function Assistant({ searchParams }: PageProps<"/assistant">) {
   const { q } = await searchParams;
-  return <PageAssistant question={typeof q === "string" && q.trim() ? q.slice(0, 300) : null} />;
+  redirect(typeof q === "string" && q.trim() ? `/beneficiaires?q=${encodeURIComponent(q.slice(0, 300))}` : "/beneficiaires");
 }

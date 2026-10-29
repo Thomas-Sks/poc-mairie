@@ -6,28 +6,21 @@ import type { Contexte } from "@/shared/application/contexte";
 import { aujourdhui } from "@/shared/domain/dates";
 import { exiger, peut } from "@/shared/domain/permissions";
 import { APPEL_INCONNU, appelDepuisAnalyseur, cleQuestion, lireAppel, type AppelOutil } from "../domain/appel";
-import {
-  PERSONNES_AFFICHEES,
-  reponseFiches,
-  reponseIncomprise,
-  reponseNombre,
-  reponseNonAutorisee,
-  reponsePersonnes,
-  type PersonneListee,
-  type ReponseAssistant,
-} from "../domain/reponse";
-import type { Annuaire, InterpretationsRepository, Interpreteur, JournalExports, SourceInterpretation } from "./ports";
+import { reponseChiffre, reponseIncomprise, reponseNonAutorisee, reponsePersonnes, type ReponseRegistre } from "../domain/reponse";
+import type { InterpretationsRepository, Interpreteur, SourceInterpretation } from "./ports";
 
 export type DepsAssistant = {
   moteur: MoteurStatistiques;
   interpretations: InterpretationsRepository;
   /** null sans clé d'API : l'analyseur de mots-clés prend le relais. */
   interpreteur: Interpreteur | null;
-  annuaire: Annuaire;
 };
 
-/** Nombre maximal de lignes d'un téléchargement Excel. */
-export const LIMITE_EXPORT = 5000;
+/** Trois mots au plus, sans point d'interrogation : « Vasseur », « Simone Duval », « rue du Marais ». */
+const estCourt = (question: string) => !question.includes("?") && question.trim().split(/\s+/).length <= 3;
+
+/** Plafond de fiches renvoyées pour filtrer le tableau (au-delà, la commune dépasse largement le POC). */
+const LIMITE_FICHES = 20_000;
 
 export { QUESTIONS_SUGGEREES };
 
@@ -36,7 +29,7 @@ export { QUESTIONS_SUGGEREES };
  * aux accents et à la ponctuation près) rejoue l'appel enregistré, sans interroger l'IA.
  */
 export async function interpreter(
-  deps: Omit<DepsAssistant, "annuaire" | "moteur">,
+  deps: Omit<DepsAssistant, "moteur">,
   ctx: Contexte,
   question: string,
   referentiels: Referentiels,
@@ -67,43 +60,31 @@ export async function interpreter(
   return { appel, source };
 }
 
-/** Assistant : une question en français, une réponse chiffrée ou une liste, toujours la même pour la même question. */
-export async function repondre(deps: DepsAssistant, ctx: Contexte, entree: { question: string }): Promise<ReponseAssistant> {
-  exiger(ctx.utilisateur.role, "statistiques.lire");
+/**
+ * Question posée dans le registre (page Bénéficiaires). Une question sur des personnes filtre le tableau et la carte ;
+ * une question chiffrée sur autre chose (appels, inscriptions…) répond en une ligne ; un nom devient une recherche.
+ * Toujours la même réponse pour la même question.
+ */
+export async function interrogerRegistre(deps: DepsAssistant, ctx: Contexte, entree: { question: string }): Promise<ReponseRegistre> {
+  exiger(ctx.utilisateur.role, "fiches.lire");
   const referentiels = await deps.moteur.referentiels(ctx.commune.id);
   const { appel } = await interpreter(deps, ctx, entree.question, referentiels);
   const moteur = { moteur: deps.moteur };
 
   switch (appel.outil) {
-    case "compter": {
-      const r = await executerRequete(moteur, ctx, { definition: appel.definition, masquerPetitsEffectifs: false, referentiels });
-      return reponseNombre(appel.definition, r, referentiels);
-    }
-    case "lister_personnes": {
-      if (!peut(ctx.utilisateur.role, "statistiques.nominatif")) return reponseNonAutorisee();
-      const r = await listerPersonnes(moteur, ctx, { definition: appel.definition, limite: PERSONNES_AFFICHEES });
-      return reponsePersonnes(appel.definition, r, referentiels, peut(ctx.utilisateur.role, "export"));
-    }
-    case "chercher_personne": {
-      if (!peut(ctx.utilisateur.role, "fiches.lire")) return reponseNonAutorisee();
-      return reponseFiches(appel.texte, await deps.annuaire.chercher(ctx.commune.id, appel.texte, aujourdhui(ctx.maintenant)));
-    }
+    case "chercher_personne":
+      return { type: "recherche", texte: appel.texte };
     case "inconnu":
-      return reponseIncomprise(QUESTIONS_SUGGEREES);
+      // Quelques mots sans critère reconnu : c'est un nom ou une adresse, on les cherche dans le registre.
+      return estCourt(entree.question) ? { type: "recherche", texte: entree.question.trim() } : reponseIncomprise(QUESTIONS_SUGGEREES);
+    case "compter":
+    case "lister_personnes": {
+      const definition = appel.definition;
+      const chiffres = await executerRequete(moteur, ctx, { definition, masquerPetitsEffectifs: false, referentiels });
+      if (definition.sujet !== "beneficiaires") return reponseChiffre(definition, chiffres, referentiels);
+      if (!peut(ctx.utilisateur.role, "statistiques.nominatif")) return reponseNonAutorisee();
+      const { personnes } = await listerPersonnes(moteur, ctx, { definition: { ...definition, decoupage: null }, limite: LIMITE_FICHES });
+      return reponsePersonnes(definition, chiffres, personnes.map((p) => p.id), referentiels);
+    }
   }
-}
-
-/** Téléchargement Excel d'une réponse « liste » : rejoue la même interprétation, sans limite d'affichage. */
-export async function exporterPersonnes(
-  deps: DepsAssistant & { journal: JournalExports },
-  ctx: Contexte,
-  entree: { question: string },
-): Promise<{ personnes: PersonneListee[]; titre: string } | null> {
-  exiger(ctx.utilisateur.role, "export");
-  const referentiels = await deps.moteur.referentiels(ctx.commune.id);
-  const { appel } = await interpreter(deps, ctx, entree.question, referentiels);
-  if (appel.outil !== "lister_personnes") return null;
-  const { personnes } = await listerPersonnes({ moteur: deps.moteur }, ctx, { definition: appel.definition, limite: LIMITE_EXPORT });
-  await deps.journal.enregistrer(ctx.commune.id, ctx.utilisateur.id, { question: entree.question, nb: personnes.length });
-  return { personnes, titre: entree.question };
 }

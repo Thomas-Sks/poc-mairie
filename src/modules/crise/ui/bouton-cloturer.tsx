@@ -32,7 +32,7 @@ export function BoutonCloturer({ alerteId, libelle }: { alerteId: string; libell
         return;
       }
       setOuvert(false);
-      toast.success("Alerte clôturée. Le rapport de campagne est prêt.");
+      toast.success("Alerte terminée. Le bilan est prêt.");
       router.push(r.campagneIds[0] ? `/campagnes/${r.campagneIds[0]}/rapport` : "/alertes");
       router.refresh();
     });
@@ -41,11 +41,11 @@ export function BoutonCloturer({ alerteId, libelle }: { alerteId: string; libell
     <AlertDialog open={ouvert} onOpenChange={setOuvert}>
       <AlertDialogTrigger render={<Button variant="outline" />}>
         <CircleStop aria-hidden />
-        Clôturer l&apos;alerte
+        Terminer l&apos;alerte
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Clôturer l&apos;alerte « {libelle} » ?</AlertDialogTitle>
+          <AlertDialogTitle>Terminer l&apos;alerte « {libelle} » ?</AlertDialogTitle>
           <AlertDialogDescription>
             Les campagnes liées s&apos;arrêtent : plus aucune vague d&apos;appels ne sera générée. Le rapport de campagne est généré
             automatiquement.
@@ -54,7 +54,7 @@ export function BoutonCloturer({ alerteId, libelle }: { alerteId: string; libell
         <AlertDialogFooter>
           <AlertDialogCancel>Annuler</AlertDialogCancel>
           <AlertDialogAction onClick={cloturer} disabled={enCours}>
-            Clôturer et voir le rapport
+            Terminer et voir le bilan
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

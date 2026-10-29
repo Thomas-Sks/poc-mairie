@@ -5,7 +5,7 @@ import { casDUsageCrise } from "@/modules/crise/infrastructure";
 import { TableauDeBordCampagne } from "@/modules/crise/ui/tableau-de-bord";
 import { versJson } from "@/modules/crise/ui/libelles";
 
-export const metadata: Metadata = { title: "Tableau de bord de campagne" };
+export const metadata: Metadata = { title: "Suivi des appels" };
 
 export default async function Campagne({ params, searchParams }: PageProps<"/campagnes/[id]">) {
   const ctx = await contexteAvec("campagnes.gerer");

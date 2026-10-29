@@ -46,7 +46,7 @@ export function FormulaireAlerte({ aujourdhui, listeId }: { aujourdhui: string; 
         setErreur(r.erreur);
         return;
       }
-      toast.success("Alerte déclenchée. Créez maintenant la campagne d'appels.");
+      toast.success("Alerte déclenchée. Choisissez maintenant qui appeler.");
       router.push(`/alertes/${r.alerteId}/campagne${listeId ? `?liste=${listeId}` : ""}`);
     });
   };
@@ -72,36 +72,38 @@ export function FormulaireAlerte({ aujourdhui, listeId }: { aujourdhui: string; 
           options={NIVEAUX_ALERTE.map((n) => ({ valeur: n, libelle: NIVEAU_ALERTE_LIBELLES[n] }))}
         />
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          <Champ id="debut" libelle="Début">
-            <Input id="debut" type="date" value={debut} onChange={(e) => setDebut(e.target.value)} required />
-          </Champ>
-          <Champ id="fin" libelle="Fin prévue" aide="Facultatif : la campagne s'arrête à cette date.">
-            <Input id="fin" type="date" value={fin} min={debut} onChange={(e) => setFin(e.target.value)} />
-          </Champ>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <ChoixSegmente
-            nom="perimetre"
-            libelle="Périmètre"
-            valeur={zone}
-            onChange={setZone}
-            options={[
-              { valeur: "commune", libelle: "Toute la commune" },
-              { valeur: "zone", libelle: "Zone géographique" },
-            ]}
-          />
-          {zone === "zone" && (
-            <Champ id="zone" libelle="Zone concernée" aide="Ex. « Rue du Marais et abords de la Deûle ». Le ciblage précis se fait à la création de la campagne.">
-              <Input id="zone" value={perimetre} onChange={(e) => setPerimetre(e.target.value)} />
-            </Champ>
-          )}
-        </div>
-
-        <Champ id="message" libelle="Message interne" aide="Visible par l'équipe du CCAS.">
-          <Textarea id="message" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />
+        <Champ id="debut" libelle="Début" className="max-w-xs">
+          <Input id="debut" type="date" value={debut} onChange={(e) => setDebut(e.target.value)} required />
         </Champ>
+
+        <details className="border-t pt-4">
+          <summary className="min-h-11 cursor-pointer py-2 font-medium text-primary">Plus de détails (facultatif)</summary>
+          <div className="mt-4 flex flex-col gap-6">
+            <Champ id="fin" libelle="Fin prévue" aide="Les appels s'arrêtent à cette date.">
+              <Input id="fin" type="date" value={fin} min={debut} onChange={(e) => setFin(e.target.value)} className="max-w-xs" />
+            </Champ>
+            <div className="flex flex-col gap-3">
+              <ChoixSegmente
+                nom="perimetre"
+                libelle="Où ?"
+                valeur={zone}
+                onChange={setZone}
+                options={[
+                  { valeur: "commune", libelle: "Toute la commune" },
+                  { valeur: "zone", libelle: "Une partie de la commune" },
+                ]}
+              />
+              {zone === "zone" && (
+                <Champ id="zone" libelle="Zone concernée" aide="Ex. « Rue du Marais ». Vous choisirez les personnes précises à l'étape suivante.">
+                  <Input id="zone" value={perimetre} onChange={(e) => setPerimetre(e.target.value)} />
+                </Champ>
+              )}
+            </div>
+            <Champ id="message" libelle="Message pour l'équipe">
+              <Textarea id="message" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />
+            </Champ>
+          </div>
+        </details>
 
         {erreur && (
           <p role="alert" className="font-medium text-err">
@@ -112,7 +114,7 @@ export function FormulaireAlerte({ aujourdhui, listeId }: { aujourdhui: string; 
         <div className="flex flex-wrap gap-3 border-t pt-5">
           <Button type="submit" size="lg" disabled={enCours}>
             <BellRing aria-hidden />
-            Déclencher l&apos;alerte
+            Continuer : qui appeler ?
           </Button>
           <Button type="button" variant="outline" size="lg" onClick={() => router.push("/alertes")}>
             Annuler

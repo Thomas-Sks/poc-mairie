@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Libelle, Surface } from "@/shared/ui/elements";
+import { Surface } from "@/shared/ui/elements";
 import type { ParametresRelance } from "@/shared/domain/campagne";
 import { ROLE_LIBELLES, type Canal, type Frequence, type Role, type TypeAlerte } from "@/shared/domain/vocabulaire";
 import type { ContenuScript } from "@/shared/infrastructure/db/schema";
@@ -137,7 +137,7 @@ export function FormulaireCampagne(props: Props) {
         </h2>
         <ChoixSegmente
           nom="source"
-          libelle="Personnes à appeler"
+          libelle="Parmi"
           valeur={typeSource}
           onChange={setTypeSource}
           options={[
@@ -204,93 +204,17 @@ export function FormulaireCampagne(props: Props) {
         <p className="border-t pt-4 text-lg" aria-live="polite">
           <span className="font-bold tabular">{nb ?? "…"}</span> personne{(nb ?? 0) > 1 ? "s" : ""} concernée{(nb ?? 0) > 1 ? "s" : ""}
           <span className="block text-base text-muted-foreground">
-            La liste est figée au lancement. Les personnes absentes sont exclues automatiquement, avec le motif{localise ? "" : ", ainsi que celles qui ont un passage d'intervenant prévu ce jour-là"}.{localise && " Pour une inondation ou une tempête, un passage prévu ne suffit pas : ces personnes restent à appeler."}
+            Les personnes absentes{localise ? "" : " ou qui ont la visite d'un intervenant ce jour-là"} ne seront pas appelées.
           </span>
         </p>
       </Surface>
 
-      <Surface className="flex flex-col gap-5 p-5 sm:p-6" aria-labelledby="titre-parametres">
-        <h2 id="titre-parametres" className="text-xl font-semibold">
-          Paramètres
-        </h2>
-        <Champ id="nom" libelle="Nom de la campagne">
-          <Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
-        </Champ>
-        <div className="flex flex-col gap-3">
-          <ChoixSegmente
-            nom="frequence"
-            libelle="Fréquence"
-            valeur={frequence}
-            onChange={setFrequence}
-            options={(["unique", "quotidienne", "tous_n_jours"] as const).map((f) => ({ valeur: f, libelle: FREQUENCE_LIBELLES[f] }))}
-          />
-          {frequence === "tous_n_jours" && (
-            <Champ id="frequence-jours" libelle="Nombre de jours entre deux appels" className="max-w-xs">
-              <Input id="frequence-jours" inputMode="numeric" value={frequenceJours} onChange={(e) => setFrequenceJours(e.target.value)} />
-            </Champ>
-          )}
-        </div>
-        <ChoixSegmente
-          nom="canal"
-          libelle="Canal"
-          valeur={canal}
-          onChange={setCanal}
-          options={(["humain", "mixte", "ia"] as const).map((c) => ({ valeur: c, libelle: CANAL_LIBELLES[c] }))}
-        />
-        {canal !== "humain" && (
-          <p className="text-muted-foreground">
-            Démonstration : les appels IA ne sont pas encore disponibles. Des résultats fictifs sont affichés pour les personnes éligibles (consentement IA,
-            hors priorité P1).
-          </p>
-        )}
-        <div className="grid gap-5 border-t pt-5 sm:grid-cols-2">
-          <Champ id="tentatives" libelle="Nombre de tentatives">
-            <Input id="tentatives" inputMode="numeric" value={nbTentatives} onChange={(e) => setNbTentatives(e.target.value)} />
-          </Champ>
-          <Champ id="delais" libelle="Délais entre tentatives (minutes)" aide="Par défaut : 30 puis 120 minutes.">
-            <Input id="delais" value={delais} onChange={(e) => setDelais(e.target.value)} />
-          </Champ>
-          <label className="flex min-h-11 items-center gap-3 sm:col-span-2">
-            <Checkbox checked={escaladeCercle} onCheckedChange={(v) => setEscaladeCercle(Boolean(v))} />
-            Après la dernière tentative, appeler le cercle de la personne (rang 1, puis 2…)
-          </label>
-        </div>
-      </Surface>
-
-      <Surface className="flex flex-col gap-5 p-5 sm:p-6" aria-labelledby="titre-script">
-        <div className="flex flex-col gap-1">
-          <h2 id="titre-script" className="text-xl font-semibold">
-            Script d&apos;appel
-          </h2>
-          <p className="text-muted-foreground">Copié depuis le modèle du type d&apos;alerte. Les modifications ne concernent que cette campagne.</p>
-        </div>
-        <details className="group">
-          <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-primary">
-            Modifier le script ({script.questions.length} questions)
-          </summary>
-          <div className="mt-4 flex flex-col gap-5">
-            <Champ id="introduction" libelle="Introduction">
-              <Textarea id="introduction" rows={4} value={script.introduction} onChange={(e) => setScript((s) => ({ ...s, introduction: e.target.value }))} />
-            </Champ>
-            {script.questions.map((q, i) => (
-              <Champ key={q.id} id={`question-${q.id}`} libelle={`Question ${i + 1}`}>
-                <Textarea id={`question-${q.id}`} rows={2} value={q.texte} onChange={(e) => majQuestion(i, e.target.value)} />
-              </Champ>
-            ))}
-            <Champ id="conclusion" libelle="Conclusion">
-              <Textarea id="conclusion" rows={2} value={script.conclusion} onChange={(e) => setScript((s) => ({ ...s, conclusion: e.target.value }))} />
-            </Champ>
-          </div>
-        </details>
-      </Surface>
-
       <Surface className="flex flex-col gap-4 p-5 sm:p-6" aria-labelledby="titre-equipe">
         <h2 id="titre-equipe" className="text-xl font-semibold">
-          Équipe mobilisée
+          Qui passe les appels ?
         </h2>
         <fieldset className="flex flex-col">
           <legend className="sr-only">Membres de l&apos;équipe</legend>
-          <Libelle className="mb-1">Appelants</Libelle>
           <div className="grid sm:grid-cols-2">
             {appelants.map((m) => (
               <label key={m.id} className="flex min-h-11 items-center gap-3">
@@ -307,8 +231,78 @@ export function FormulaireCampagne(props: Props) {
         </fieldset>
         <label className="flex min-h-11 items-center gap-3 border-t pt-4">
           <Checkbox checked={repartir} onCheckedChange={(v) => setRepartir(Boolean(v))} />
-          Répartir automatiquement les appels entre ces personnes (par ordre de priorité)
+          Partager les appels entre ces personnes, les plus fragiles d&apos;abord (les personnes confiées à un bénévole restent chez lui)
         </label>
+      </Surface>
+
+      <Surface className="p-5 sm:p-6">
+        <details>
+          <summary className="flex min-h-11 cursor-pointer items-center text-lg font-semibold text-primary">Réglages des appels (facultatif)</summary>
+          <div className="mt-5 flex flex-col gap-5">
+            <Champ id="nom" libelle="Nom">
+              <Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} required />
+            </Champ>
+            <div className="flex flex-col gap-3">
+              <ChoixSegmente
+                nom="frequence"
+                libelle="Fréquence"
+                valeur={frequence}
+                onChange={setFrequence}
+                options={(["unique", "quotidienne", "tous_n_jours"] as const).map((f) => ({ valeur: f, libelle: FREQUENCE_LIBELLES[f] }))}
+              />
+              {frequence === "tous_n_jours" && (
+                <Champ id="frequence-jours" libelle="Nombre de jours entre deux appels" className="max-w-xs">
+                  <Input id="frequence-jours" inputMode="numeric" value={frequenceJours} onChange={(e) => setFrequenceJours(e.target.value)} />
+                </Champ>
+              )}
+            </div>
+            <ChoixSegmente
+              nom="canal"
+              libelle="Canal"
+              valeur={canal}
+              onChange={setCanal}
+              options={(["humain", "mixte", "ia"] as const).map((c) => ({ valeur: c, libelle: CANAL_LIBELLES[c] }))}
+            />
+            {canal !== "humain" && (
+              <p className="text-muted-foreground">
+                Démonstration : les appels IA ne sont pas encore disponibles. Des résultats fictifs sont affichés pour les personnes éligibles (consentement IA,
+                hors priorité P1).
+              </p>
+            )}
+            <div className="grid gap-5 border-t pt-5 sm:grid-cols-2">
+              <Champ id="tentatives" libelle="Nombre de tentatives">
+                <Input id="tentatives" inputMode="numeric" value={nbTentatives} onChange={(e) => setNbTentatives(e.target.value)} />
+              </Champ>
+              <Champ id="delais" libelle="Délais entre tentatives (minutes)" aide="Par défaut : 30 puis 120 minutes.">
+                <Input id="delais" value={delais} onChange={(e) => setDelais(e.target.value)} />
+              </Champ>
+              <label className="flex min-h-11 items-center gap-3 sm:col-span-2">
+                <Checkbox checked={escaladeCercle} onCheckedChange={(v) => setEscaladeCercle(Boolean(v))} />
+                Après la dernière tentative, appeler le cercle de la personne (rang 1, puis 2…)
+              </label>
+            </div>
+            <div className="border-t pt-5">
+              <details>
+                <summary className="flex min-h-11 cursor-pointer items-center font-medium text-primary">
+                  Modifier ce que disent les appelants ({script.questions.length} questions)
+                </summary>
+                <div className="mt-4 flex flex-col gap-5">
+                  <Champ id="introduction" libelle="Introduction">
+                    <Textarea id="introduction" rows={4} value={script.introduction} onChange={(e) => setScript((s) => ({ ...s, introduction: e.target.value }))} />
+                  </Champ>
+                  {script.questions.map((q, i) => (
+                    <Champ key={q.id} id={`question-${q.id}`} libelle={`Question ${i + 1}`}>
+                      <Textarea id={`question-${q.id}`} rows={2} value={q.texte} onChange={(e) => majQuestion(i, e.target.value)} />
+                    </Champ>
+                  ))}
+                  <Champ id="conclusion" libelle="Conclusion">
+                    <Textarea id="conclusion" rows={2} value={script.conclusion} onChange={(e) => setScript((s) => ({ ...s, conclusion: e.target.value }))} />
+                  </Champ>
+                </div>
+              </details>
+            </div>
+          </div>
+        </details>
       </Surface>
 
       {erreur && (
@@ -319,7 +313,7 @@ export function FormulaireCampagne(props: Props) {
       <div className="flex flex-wrap gap-3">
         <Button type="submit" size="lg" disabled={enCours || !nb}>
           <Rocket aria-hidden />
-          Lancer la campagne
+          Lancer les appels
         </Button>
         <Button type="button" variant="outline" size="lg" onClick={() => router.push("/alertes")}>
           Plus tard

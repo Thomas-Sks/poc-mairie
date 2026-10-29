@@ -5,7 +5,6 @@ import {
   comparerPriorite,
   contientDonneesSante,
   genererCsv,
-  lireConfigVue,
   lireRequeteTableau,
   type LigneBeneficiaire,
 } from "./tableau";
@@ -60,18 +59,6 @@ describe("requête du tableau", () => {
 
   it("refuse une taille de page excessive", () => {
     expect(() => lireRequeteTableau({ taillePage: 100_000 })).toThrow();
-  });
-});
-
-describe("vues sauvegardées", () => {
-  it("valide et normalise la configuration", () => {
-    const v = lireConfigVue({ colonnes: ["nom", "age", "nom"], filtre: { niveaux: ["P2", "P1"] } });
-    expect(v.colonnes).toEqual(["nom", "age"]);
-    expect(v.filtre).toEqual({ version: 1, niveaux: ["P1", "P2"] });
-  });
-
-  it("refuse une colonne inconnue", () => {
-    expect(() => lireConfigVue({ colonnes: ["salaire"] })).toThrow();
   });
 });
 
