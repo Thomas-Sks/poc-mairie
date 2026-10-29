@@ -3,7 +3,7 @@
  * Rappels du jour et en retard, anniversaires à venir (E4-US1), fiches à revérifier (E1-US5)
  * et contacts dus selon la fréquence cible (E4-US4).
  */
-import { ajouterJours, ecartEnJours, estAnniversaireRond, prochainAnniversaire, retirerMois, type DateISO } from "@/shared/domain/dates";
+import { ajouterJours, ecartEnJours, estAnniversaireRond, prochainAnniversaire, type DateISO } from "@/shared/domain/dates";
 import type { TypeRappel } from "@/shared/domain/vocabulaire";
 
 // ─── Rappels ──────────────────────────────────────────────────────────────────
@@ -57,7 +57,6 @@ export type PersonneSuivie = {
   nom: string;
   dateNaissance: DateISO;
   dateInscription: DateISO;
-  dateDerniereVerification: DateISO | null;
   frequenceContactJours: number | null;
   dernierContact: DateISO | null;
 };
@@ -79,23 +78,6 @@ export function anniversairesAVenir(personnes: PersonneSuivie[], jour: DateISO, 
     })
     .filter((a) => a.dansJours <= joursAvant)
     .sort((a, b) => a.dansJours - b.dansJours || a.personne.nom.localeCompare(b.personne.nom, "fr"));
-}
-
-/** Retire `mois` mois à une date ISO (le jour est ramené au dernier jour du mois si besoin). */
-export { retirerMois };
-
-export type FicheAReverifier = { personne: PersonneSuivie; depuis: DateISO };
-
-/**
- * E1-US5 : fiches non vérifiées depuis plus de `verificationMois` mois.
- * Sans date de vérification, on part de la date d'inscription. Les plus anciennes d'abord.
- */
-export function fichesAReverifier(personnes: PersonneSuivie[], jour: DateISO, verificationMois: number): FicheAReverifier[] {
-  const limite = retirerMois(jour, verificationMois);
-  return personnes
-    .map((personne) => ({ personne, depuis: personne.dateDerniereVerification ?? personne.dateInscription }))
-    .filter((f) => f.depuis < limite)
-    .sort((a, b) => a.depuis.localeCompare(b.depuis));
 }
 
 export type ContactDu = { personne: PersonneSuivie; joursSansContact: number | null; retard: number };
@@ -122,28 +104,24 @@ export function contactsDus(personnes: PersonneSuivie[], jour: DateISO): Contact
 
 // ─── Synthèse ────────────────────────────────────────────────────────────────
 
-export type ParametresTaches = { anniversaireJoursAvant: number; verificationMois: number };
+/** E4-US1 : les anniversaires sont annoncés 3 jours à l'avance. */
+export const ANNIVERSAIRE_JOURS_AVANT = 3;
 
 export type TachesDuJour = {
   jour: DateISO;
   rappels: RappelDuJour[];
   anniversaires: AnniversaireAVenir[];
-  fichesAReverifier: FicheAReverifier[];
-  /** Seuil utilisé pour les fiches à revérifier (lien vers la liste complète du registre). */
-  verificationMois: number;
   contactsDus: ContactDu[];
 };
 
 export function selectionnerTachesDuJour(
-  entree: { rappels: Rappel[]; personnes: PersonneSuivie[]; parametres: ParametresTaches },
+  entree: { rappels: Rappel[]; personnes: PersonneSuivie[] },
   jour: DateISO,
 ): TachesDuJour {
   return {
     jour,
     rappels: selectionnerRappels(entree.rappels, jour),
-    anniversaires: anniversairesAVenir(entree.personnes, jour, entree.parametres.anniversaireJoursAvant),
-    fichesAReverifier: fichesAReverifier(entree.personnes, jour, entree.parametres.verificationMois),
-    verificationMois: entree.parametres.verificationMois,
+    anniversaires: anniversairesAVenir(entree.personnes, jour, ANNIVERSAIRE_JOURS_AVANT),
     contactsDus: contactsDus(entree.personnes, jour),
   };
 }

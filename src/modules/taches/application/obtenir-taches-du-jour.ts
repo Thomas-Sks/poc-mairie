@@ -30,14 +30,13 @@ export async function obtenirTachesDuJour(
   const vueEquipe = entree.equipe && peutVoirEquipe;
   const peutValider = peut(ctx.utilisateur.role, "inscriptions.valider");
 
-  const [rappels, personnes, parametres, inscriptions] = await Promise.all([
+  const [rappels, personnes, inscriptions] = await Promise.all([
     deps.taches.rappelsOuverts(communeId, { jusquAu: jour, assigneA: vueEquipe ? undefined : ctx.utilisateur.id }),
     deps.taches.personnesActives(communeId),
-    deps.taches.parametres(communeId),
     peutValider ? deps.taches.inscriptionsEnAttente(communeId) : Promise.resolve(null),
   ]);
 
-  const selection = selectionnerTachesDuJour({ rappels, personnes, parametres }, jour);
+  const selection = selectionnerTachesDuJour({ rappels, personnes }, jour);
   const nomAssigne = new Map(rappels.map((r) => [r.id, r.assigneNom]));
 
   return {

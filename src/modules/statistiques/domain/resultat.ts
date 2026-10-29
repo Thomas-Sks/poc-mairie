@@ -4,15 +4,20 @@
  */
 import {
   BESOIN_LIBELLES,
+  CAISSE_RETRAITE_LIBELLES,
   DEPLACEMENTS,
   DEPLACEMENT_LIBELLES,
   INTERACTION_LIBELLES,
   MODE_DE_VIE_LIBELLES,
+  ORIGINES_INSCRIPTION,
+  ORIGINE_INSCRIPTION_LIBELLES,
   PRISE_EN_CHARGE_LIBELLES,
   SEXE_LIBELLES,
   type Besoin,
+  type CaisseRetraite,
   type Deplacement,
   type ModeDeVie,
+  type OrigineInscription,
   type Sexe,
   type TypeInteraction,
   type TypePriseEnCharge,
@@ -99,6 +104,10 @@ export function categoriser(decoupage: DecoupageId, brute: string | null, r: Ref
       return { cle: brute, libelle: SEXE_LIBELLES[brute as Sexe] ?? brute, rang: 0 };
     case "mode_de_vie":
       return { cle: brute, libelle: MODE_DE_VIE_LIBELLES[brute as ModeDeVie] ?? brute, rang: 0 };
+    case "caisse_retraite":
+      return { cle: brute, libelle: CAISSE_RETRAITE_LIBELLES[brute as CaisseRetraite] ?? brute, rang: 0 };
+    case "origine_inscription":
+      return { cle: brute, libelle: ORIGINE_INSCRIPTION_LIBELLES[brute as OrigineInscription] ?? brute, rang: indexDe(ORIGINES_INSCRIPTION, brute) };
     case "mobilite":
       return { cle: brute, libelle: DEPLACEMENT_LIBELLES[brute as Deplacement] ?? brute, rang: indexDe(DEPLACEMENTS, brute) };
     case "gir":

@@ -18,6 +18,7 @@ export default async function PageMaListe({ searchParams }: PageProps<"/benevole
       suivanteId={vue.suivanteId}
       maintenant={ctx.maintenant}
       rendues={nbRendues}
+      nbPersonnesConfiees={vue.nbPersonnesConfiees}
     />
   );
 }

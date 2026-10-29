@@ -57,8 +57,11 @@ const MOTIFS: Motif[] = [
   { re: /\b(p1|priorite 1|tres prioritaires?)\b/, filtre: () => f("priorite", "P1") },
   { re: /\btroubles? cognitifs?\b|\balzheimer\b/, filtre: () => f("troubles_cognitifs", "oui") },
   { re: /\b(sans|pas de|n'ont pas de) telephone\b/, filtre: () => f("sans_telephone", "oui") },
-  { re: /\bnon verifiee?s? depuis (\d{1,2}) mois\b/, filtre: (m) => f("mois_depuis_verification", m[1], "sup_egal") },
-  { re: /\bnon verifiee?s? depuis (un|1) an\b/, filtre: () => f("mois_depuis_verification", "12", "sup_egal") },
+  { re: /\b(carsat|regime general)\b/, filtre: () => f("caisse_retraite", "carsat") },
+  { re: /\bmsa\b/, filtre: () => f("caisse_retraite", "msa") },
+  { re: /\bcnracl\b/, filtre: () => f("caisse_retraite", "cnracl") },
+  { re: /\baides? (de (la|leur|sa) )?caisses? de retraite\b/, filtre: () => f("aide_caisse_retraite", "oui") },
+  { re: /\b(transmis|envoye)e?s? par le departement\b|\bliste du departement\b/, filtre: () => f("origine_inscription", "departement") },
   { re: /\b(pas|jamais) (ete )?(contacte|appele)e?s? depuis (\d{1,2}) mois\b/, filtre: (m) => f("mois_sans_contact", m[4], "sup_egal") },
   { re: /\badresses? a verifier\b/, filtre: () => f("adresse_a_verifier", "oui") },
 
@@ -129,6 +132,6 @@ export const QUESTIONS_SUGGEREES = [
   "Combien d'hommes de plus de 80 ans touchent l'APA et ont une forte difficulté de mobilité ?",
   "Combien de personnes vivent seules, par quartier ?",
   "Combien de femmes de plus de 85 ans sans téléphone ?",
-  "Combien de fiches non vérifiées depuis 12 mois, par quartier ?",
+  "Liste des personnes P1 qui vivent seules",
   "Combien d'appels de campagne non joints, par besoin ?",
 ] as const;

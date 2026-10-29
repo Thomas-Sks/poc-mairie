@@ -21,10 +21,12 @@ export type EntreeFaits = {
     troublesCognitifs: boolean;
     pasDeTelephone: boolean;
     retourHospitalisationLe: DateISO | null;
+    gir: number | null;
+    aideCaisseRetraite: boolean;
   };
   foyer: { sousLesToits: boolean; pieceFraiche: boolean | null; etage: number | null; typeLogement: TypeLogement | null };
   cercle: { relation: Relation; possedeCles: boolean; ville: string | null; telephone: string | null }[];
-  prisesEnCharge: { type: TypePriseEnCharge; possedeCles: boolean; dateFin: DateISO | null }[];
+  prisesEnCharge: { type: TypePriseEnCharge; possedeCles: boolean; dateFin: DateISO | null; gir: number | null }[];
   aujourdhui: DateISO;
 };
 
@@ -34,6 +36,7 @@ export function estProche(ville: string | null): boolean {
 
 export function extraireFaits(e: EntreeFaits): FaitsPriorite {
   const prisesActives = e.prisesEnCharge.filter((p) => p.dateFin === null || p.dateFin >= e.aujourdhui);
+  const apa = prisesActives.find((p) => p.type === "apa");
   return {
     age: calculerAge(e.beneficiaire.dateNaissance, e.aujourdhui),
     modeDeVie: e.beneficiaire.modeDeVie,
@@ -51,5 +54,8 @@ export function extraireFaits(e: EntreeFaits): FaitsPriorite {
       ecartEnJours(e.beneficiaire.retourHospitalisationLe, e.aujourdhui) <= 30 &&
       ecartEnJours(e.beneficiaire.retourHospitalisationLe, e.aujourdhui) >= 0,
     pasDeTelephone: e.beneficiaire.pasDeTelephone,
+    apa: apa ? { gir: apa.gir ?? e.beneficiaire.gir } : null,
+    pch: prisesActives.some((p) => p.type === "pch"),
+    aideCaisseRetraite: e.beneficiaire.aideCaisseRetraite,
   };
 }

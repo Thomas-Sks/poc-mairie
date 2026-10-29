@@ -5,7 +5,7 @@ import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GRILLE_PAR_DEFAUT, type GrilleScore } from "@/shared/domain/priorite";
 import { Surface } from "@/shared/ui/elements";
-import { CRITERES_DEPLACEMENT, CRITERES_GRILLE } from "../domain/parametres";
+import { CRITERES_AIDES, CRITERES_DEPLACEMENT, CRITERES_GRILLE } from "../domain/parametres";
 import { enregistrerGrilleEtRecalculerAction } from "./actions";
 import { ChampNombre, PiedFormulaire, SousTitre, useEnvoi } from "./champs";
 
@@ -23,7 +23,7 @@ export function FormulaireGrille({ initiale }: { initiale: GrilleScore }) {
         }}
       >
         <div className="flex flex-col gap-4 px-5 py-5 sm:px-6">
-          <SousTitre>Points par critère</SousTitre>
+          <SousTitre>Âge, isolement et logement</SousTitre>
           <div className="grid gap-x-10 gap-y-3 md:grid-cols-2">
             {CRITERES_GRILLE.map((c) => (
               <ChampNombre key={c.cle} id={`grille-${c.cle}`} libelle={c.libelle} unite="pts" valeur={g[c.cle]} onChange={(n) => setG({ ...g, [c.cle]: n })} />
@@ -43,6 +43,15 @@ export function FormulaireGrille({ initiale }: { initiale: GrilleScore }) {
                 valeur={g.deplacement[c.cle]}
                 onChange={(n) => setG({ ...g, deplacement: { ...g.deplacement, [c.cle]: n } })}
               />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-4 border-t px-5 py-5 sm:px-6">
+          <SousTitre>Aides et droits (Département, caisses de retraite)</SousTitre>
+          <div className="grid gap-x-10 gap-y-3 md:grid-cols-2">
+            {CRITERES_AIDES.map((c) => (
+              <ChampNombre key={c.cle} id={`grille-${c.cle}`} libelle={c.libelle} unite="pts" valeur={g[c.cle]} onChange={(n) => setG({ ...g, [c.cle]: n })} />
             ))}
           </div>
         </div>

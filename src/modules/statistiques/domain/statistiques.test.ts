@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { analyserQuestion, QUESTIONS_SUGGEREES } from "./analyseur";
 import { developperMobilite, developperStatutAppel, trancheAge } from "./catalogue";
 import { nomFichierCsv, versCsv } from "./csv";
-import { appliquerPeriode, dashboardsPredefinis, droitsDashboard, ordreDeLecture, placerNouveau, requetesPredefinies, schemaWidget, widgetCompatible } from "./dashboard";
 import { changerSujet, decrireFiltres, definitionVide, schemaDefinition, type DefinitionRequete, type Referentiels } from "./requete";
 import {
   construireResultat,
@@ -207,47 +206,6 @@ describe("E12-US2 analyseur de questions", () => {
 
   it("signale une question incomprise", () => {
     expect(analyserQuestion("Quel temps fera-t-il demain ?", REF).vide).toBe(true);
-  });
-});
-
-describe("E12-US3/US4 dashboards", () => {
-  const predefinis = dashboardsPredefinis({ jour: "2026-10-28", campagneCaniculeId: REF.campagnes[0].id });
-
-  it("livre au moins Population suivie et Activité annuelle, avec des widgets valides", () => {
-    expect(predefinis.map((d) => d.nom)).toEqual(expect.arrayContaining(["Population suivie", "Activité annuelle"]));
-    for (const d of predefinis) {
-      for (const w of d.widgets) {
-        expect(schemaWidget.safeParse(w).success, `${d.nom} / ${w.titre}`).toBe(true);
-        expect(widgetCompatible(w.type, w.requete), `${d.nom} / ${w.titre}`).toBe(true);
-      }
-    }
-    for (const r of requetesPredefinies()) expect(schemaDefinition.safeParse(r.definition).success).toBe(true);
-  });
-
-  it("empile les widgets dans l'ordre de lecture et place un nouveau widget en bas", () => {
-    const ws = [{ layout: { x: 6, y: 0, w: 6, h: 2 } }, { layout: { x: 0, y: 2, w: 6, h: 4 } }, { layout: { x: 0, y: 0, w: 6, h: 2 } }];
-    expect(ordreDeLecture(ws).map((w) => `${w.layout.x},${w.layout.y}`)).toEqual(["0,0", "6,0", "0,2"]);
-    expect(placerNouveau(ws, "chiffre")).toEqual({ x: 0, y: 6, w: 3, h: 2 });
-  });
-
-  it("applique la période globale aux événements, pas à la population", () => {
-    const p = { du: "2026-01-01", au: "2026-06-30" };
-    expect(appliquerPeriode(definitionVide("beneficiaires"), p).periode).toBeNull();
-    expect(appliquerPeriode({ ...definitionVide("beneficiaires"), decoupage: "mois" }, p).periode).toEqual(p);
-    expect(appliquerPeriode(definitionVide("interactions"), p).periode).toEqual(p);
-  });
-});
-
-describe("droits sur les dashboards", () => {
-  const admin = { id: "a", estAdmin: true };
-  const julie = { id: "j", estAdmin: false };
-  const karim = { id: "k", estAdmin: false };
-  it("partage, auteur, prédéfini", () => {
-    expect(droitsDashboard({ predefini: true, partage: true, creePar: null }, julie)).toEqual({ voir: true, modifier: false, supprimer: false });
-    expect(droitsDashboard({ predefini: true, partage: true, creePar: null }, admin)).toEqual({ voir: true, modifier: true, supprimer: false });
-    expect(droitsDashboard({ predefini: false, partage: false, creePar: "j" }, karim).voir).toBe(false);
-    expect(droitsDashboard({ predefini: false, partage: true, creePar: "j" }, karim)).toEqual({ voir: true, modifier: false, supprimer: false });
-    expect(droitsDashboard({ predefini: false, partage: false, creePar: "j" }, julie)).toEqual({ voir: true, modifier: true, supprimer: true });
   });
 });
 

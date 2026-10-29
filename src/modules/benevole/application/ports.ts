@@ -47,7 +47,12 @@ export type FicheAppel = {
   verrouilleParAutre: boolean;
   /** Cercle par rang d'appel, uniquement les proches qui ont un numéro (E10-US5). */
   cercle: ProcheAAppeler[];
+  /** « Fiche canicule » : comptes rendus écrits pendant l'alerte en cours, par tous les appelants. Jamais l'historique de l'année. */
+  notesAlerte: NoteAlerte[];
 };
+
+/** Même forme que les notes lues par le module Crise. */
+export type NoteAlerte = { auteur: string; at: Date; texte: string };
 
 export interface LectureBenevole {
   /** Cibles de la vague du jour assignées au bénévole, dans les campagnes actives de la commune. */
@@ -55,6 +60,36 @@ export interface LectureBenevole {
   /** null si la cible n'est pas assignée à ce bénévole, pas du jour ou hors campagne active (RG-07). */
   ficheAppel(communeId: string, benevoleId: string, cibleId: string, jour: string, maintenant: Date): Promise<FicheAppel | null>;
   engagementAccepteLe(benevoleId: string): Promise<Date | null>;
+  /** Nombre de personnes confiées au bénévole (table des assignations), même hors alerte. */
+  nbPersonnesConfiees(communeId: string, benevoleId: string): Promise<number>;
+}
+
+// ─── Gestion des bénévoles (côté CCAS) ───────────────────────────────────────
+
+export type BenevoleResume = { id: string; prenom: string; nom: string; telephone: string | null; email: string; nbPersonnes: number };
+
+export type PersonneConfiee = {
+  id: string;
+  civilite: Civilite;
+  prenom: string;
+  nom: string;
+  age: number;
+  adresse: string;
+  niveau: NiveauPriorite;
+};
+
+export type PersonneTrouvee = PersonneConfiee & { dejaConfiee: boolean };
+
+export interface GestionBenevoles {
+  lister(communeId: string): Promise<BenevoleResume[]>;
+  obtenir(communeId: string, benevoleId: string): Promise<BenevoleResume | null>;
+  personnesConfiees(communeId: string, benevoleId: string, jour: string): Promise<PersonneConfiee[]>;
+  /** Recherche par nom ou rue parmi les fiches actives (20 résultats au plus). */
+  rechercher(communeId: string, benevoleId: string, texte: string, jour: string): Promise<PersonneTrouvee[]>;
+  emailUtilise(email: string): Promise<boolean>;
+  creer(communeId: string, b: { prenom: string; nom: string; telephone: string | null; email: string }): Promise<string>;
+  confier(communeId: string, benevoleId: string, beneficiaireIds: string[]): Promise<number>;
+  retirer(communeId: string, benevoleId: string, beneficiaireId: string): Promise<void>;
 }
 
 type CommandeBase = {

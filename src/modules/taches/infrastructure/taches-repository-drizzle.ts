@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, eq, isNull, lte, max, sql } from "drizzle-orm";
 import { db } from "@/shared/infrastructure/db/client";
-import { beneficiaires, communes, inscriptions, interactions, rappels, utilisateurs } from "@/shared/infrastructure/db/schema";
+import { beneficiaires, inscriptions, interactions, rappels, utilisateurs } from "@/shared/infrastructure/db/schema";
 import { aujourdhui } from "@/shared/domain/dates";
 import type { TachesRepository } from "../application/ports";
 
@@ -87,7 +87,6 @@ export const tachesRepositoryDrizzle: TachesRepository = {
         nom: nomBeneficiaire,
         dateNaissance: beneficiaires.dateNaissance,
         dateInscription: beneficiaires.dateInscription,
-        dateDerniereVerification: beneficiaires.dateDerniereVerification,
         frequenceContactJours: beneficiaires.frequenceContactJours,
         dernier: derniers.dernier,
       })
@@ -112,13 +111,5 @@ export const tachesRepositoryDrizzle: TachesRepository = {
         personnes: personnes.map((p) => [p.civilite, p.prenom, p.nom].filter(Boolean).join(" ")).filter(Boolean),
       };
     });
-  },
-
-  async parametres(communeId) {
-    const commune = await db.query.communes.findFirst({ where: eq(communes.id, communeId), columns: { parametres: true } });
-    return {
-      anniversaireJoursAvant: commune?.parametres.anniversaireJoursAvant ?? 3,
-      verificationMois: commune?.parametres.verificationMois ?? 12,
-    };
   },
 };

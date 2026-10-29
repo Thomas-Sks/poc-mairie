@@ -14,10 +14,12 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import type {
   Besoin,
+  CaisseRetraite,
   Canal,
   Categorie,
   Civilite,
@@ -29,6 +31,7 @@ import type {
   NiveauAlerte,
   NiveauPriorite,
   NiveauRisque,
+  OrigineInscription,
   PreferenceContact,
   Protection,
   Relation,
@@ -57,10 +60,6 @@ const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull(
 
 export type ParametresCommune = {
   grilleScore: GrilleScore;
-  relance: ParametresRelance;
-  anniversaireJoursAvant: number;
-  verificationMois: number;
-  rgpd: { responsable: string; conservation: string; dpo: string; droits: string };
 };
 
 export const communes = pgTable("communes", {
@@ -199,6 +198,10 @@ export const beneficiaires = pgTable(
     teleassistance: boolean("teleassistance").notNull().default(false),
     teleassistanceFournisseur: text("teleassistance_fournisseur"),
     medecinTraitant: text("medecin_traitant"),
+    // Aides et droits (décret n° 2026-590) — l'APA et la PCH sont des prises en charge
+    caisseRetraite: text("caisse_retraite").$type<CaisseRetraite>(),
+    aideCaisseRetraite: boolean("aide_caisse_retraite").notNull().default(false),
+    origineInscription: text("origine_inscription").$type<OrigineInscription>().notNull().default("demande"),
     // Habitudes
     habitudes: text("habitudes"),
     centresInteret: text("centres_interet"),
@@ -207,7 +210,6 @@ export const beneficiaires = pgTable(
     infoPrioritaire: text("info_prioritaire"),
     // Dates clés
     dateInscription: date("date_inscription").notNull(),
-    dateDerniereVerification: date("date_derniere_verification"),
     retourHospitalisationLe: date("retour_hospitalisation_le"),
     frequenceContactJours: integer("frequence_contact_jours"),
     // Consentements
@@ -525,35 +527,21 @@ export const ciblesCampagne = pgTable(
   ],
 );
 
-// ─── Statistiques (E12) ───────────────────────────────────────────────────────
+// ─── Assistant ────────────────────────────────────────────────────────────────
 
-export const requetesStat = pgTable("requetes_stat", {
-  id: id(),
-  communeId: communeId(),
-  nom: text("nom").notNull(),
-  definition: jsonb("definition").$type<Record<string, unknown>>().notNull(),
-  creePar: uuid("cree_par").references(() => utilisateurs.id),
-  createdAt: createdAt(),
-});
-
-export type WidgetDashboard = {
-  id: string;
-  titre: string;
-  type: "chiffre" | "barres" | "camembert" | "courbe" | "carte" | "tableau";
-  requete: Record<string, unknown>;
-  layout: { x: number; y: number; w: number; h: number };
-};
-
-export const dashboards = pgTable("dashboards", {
-  id: id(),
-  communeId: communeId(),
-  nom: text("nom").notNull(),
-  predefini: boolean("predefini").notNull().default(false),
-  partage: boolean("partage").notNull().default(true),
-  widgets: jsonb("widgets").$type<WidgetDashboard[]>().notNull().default([]),
-  creePar: uuid("cree_par").references(() => utilisateurs.id),
-  createdAt: createdAt(),
-});
+/** Interprétation figée d'une question : la même question rejoue toujours le même appel d'outil. */
+export const interpretationsAssistant = pgTable(
+  "interpretations_assistant",
+  {
+    id: id(),
+    communeId: communeId(),
+    questionNormalisee: text("question_normalisee").notNull(),
+    appel: jsonb("appel").$type<Record<string, unknown>>().notNull(),
+    source: text("source").$type<"ia" | "analyseur">().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("interpretations_assistant_question_idx").on(t.communeId, t.questionNormalisee)],
+);
 
 // ─── Notifications (E14) & audit (E13) ────────────────────────────────────────
 
@@ -594,22 +582,7 @@ export const presences = pgTable(
   (t) => [primaryKey({ columns: [t.utilisateurId, t.ressource] })],
 );
 
-// ─── Import Excel (E15) ───────────────────────────────────────────────────────
-
-/** E15-US2 : correspondance de colonnes sauvegardée, retrouvée pour un fichier de même format (même en-têtes). */
-export const mappingsImport = pgTable("mappings_import", {
-  id: id(),
-  communeId: communeId(),
-  /** Empreinte des en-têtes du fichier (module import). */
-  signature: text("signature").notNull(),
-  nom: text("nom").notNull(),
-  /** En-tête de colonne → champ de la plateforme (ou « ignorer » / « note »). */
-  colonnes: jsonb("colonnes").$type<Record<string, string>>().notNull(),
-  /** Champ → valeur brute → valeur de la plateforme (listes). */
-  valeurs: jsonb("valeurs").$type<Record<string, Record<string, string>>>().notNull().default({}),
-  creePar: uuid("cree_par").references(() => utilisateurs.id),
-  updatedAt: updatedAt(),
-});
+// ─── Notes de fiche ───────────────────────────────────────────────────────────
 
 /** E15-US3 : notes libres rattachées à une fiche (colonnes « fourre-tout » importées). */
 export const notesFiche = pgTable(

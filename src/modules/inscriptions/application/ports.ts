@@ -3,6 +3,7 @@ import type { DateISO } from "@/shared/domain/dates";
 import type { GrilleScore } from "@/shared/domain/priorite";
 import type { Civilite, NiveauPriorite, StatutFiche } from "@/shared/domain/vocabulaire";
 import type { FicheExistante } from "../domain/doublons";
+import type { TextesRgpd } from "../domain/rgpd";
 import type { InscriptionTransformee } from "../domain/transformation";
 
 /** Commune du formulaire public (résolue côté serveur, sans utilisateur connecté). */
@@ -12,7 +13,7 @@ export type CommunePublique = {
   codePostal: string;
   structureNom: string;
   structureTelephone: string;
-  rgpd: { responsable: string; conservation: string; dpo: string; droits: string };
+  rgpd: TextesRgpd;
   grilleScore: GrilleScore;
 };
 

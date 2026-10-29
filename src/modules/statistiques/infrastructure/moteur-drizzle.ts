@@ -13,7 +13,6 @@ import {
   rappels as r,
 } from "@/shared/infrastructure/db/schema";
 import type { DateISO } from "@/shared/domain/dates";
-import type { NiveauPriorite } from "@/shared/domain/vocabulaire";
 import { developperMobilite, developperStatutAppel, estSujetPersonne, type DecoupageId, type Sujet } from "../domain/catalogue";
 import type { DefinitionRequete, Filtre, Periode, Referentiels } from "../domain/requete";
 import type { ResultatBrut } from "../domain/resultat";
@@ -111,10 +110,12 @@ function condition(filtre: Filtre, ref: DateISO): SQL {
       return sql`${b.teleassistance} = ${oui}`;
     case "adresse_a_verifier":
       return sql`(${f.adresseAVerifier} or ${f.lon} is null) = ${oui}`;
-    case "mois_depuis_verification": {
-      const derniere = sql`coalesce(${b.dateDerniereVerification}, ${b.dateInscription})`;
-      return filtre.operateur === "inf_egal" ? sql`${derniere} >= ${ilYA(ref, nombre)}` : sql`${derniere} <= ${ilYA(ref, nombre)}`;
-    }
+    case "caisse_retraite":
+      return parmi(b.caisseRetraite, [v], pos);
+    case "aide_caisse_retraite":
+      return sql`${b.aideCaisseRetraite} = ${oui}`;
+    case "origine_inscription":
+      return parmi(b.origineInscription, [v], pos);
     case "mois_sans_contact":
       return sql`not exists (select 1 from interactions ix where ix.beneficiaire_id = ${b.id} and ix.type in (${liste(TYPES_CONTACT)}) and ix.survenue_le >= ${ilYA(ref, nombre)})`;
     case "type_interaction":
@@ -151,6 +152,10 @@ function decoupageSql(dec: DecoupageId, p: Plan, ref: DateISO): { cle: SQL; join
       return { cle: prioriteSql, jointure: sans };
     case "mode_de_vie":
       return { cle: sql`${b.modeDeVie}`, jointure: sans };
+    case "caisse_retraite":
+      return { cle: sql`${b.caisseRetraite}`, jointure: sans };
+    case "origine_inscription":
+      return { cle: sql`${b.origineInscription}`, jointure: sans };
     case "mobilite":
       return { cle: sql`${b.deplacement}`, jointure: sans };
     case "prise_en_charge":
@@ -207,9 +212,11 @@ export const moteurStatistiquesDrizzle: MoteurStatistiques = {
     const p = plan(d.sujet, communeId);
     const where = conditions(d, p, d.periode, ref);
     const [{ n: total }] = await db.execute<{ n: number }>(sql`select count(distinct ${b.id})::int as n from ${p.from} where ${where}`);
-    const lignes = await db.execute<{ id: string; civilite: string; nom: string; prenom: string; age: number; quartier: string | null; priorite: NiveauPriorite }>(
+    const lignes = await db.execute<PersonneTrouvee>(
       sql`select distinct ${b.id} as id, ${b.civilite} as civilite, ${b.nom} as nom, ${b.prenom} as prenom, ${ageSql(ref)} as age,
-            ${f.quartier} as quartier, ${prioriteSql} as priorite
+            ${f.quartier} as quartier, ${prioriteSql} as priorite,
+            concat_ws(' ', ${f.numero}::text, ${f.rep}, ${f.voie}) as adresse,
+            coalesce(${b.telephoneMobile}, ${b.telephoneFixe}) as telephone
           from ${p.from} where ${where} order by nom, prenom limit ${limite}`,
     );
     return { total, personnes: [...lignes] satisfies PersonneTrouvee[] };

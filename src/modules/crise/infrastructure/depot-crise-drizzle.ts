@@ -5,8 +5,14 @@ import * as s from "@/shared/infrastructure/db/schema";
 import { comparerOrdreAppel } from "@/shared/domain/campagne";
 import type { DateISO } from "@/shared/domain/dates";
 import { INDISPONIBILITE_LIBELLES, PRISE_EN_CHARGE_LIBELLES, RELATION_LIBELLES, type NiveauPriorite, type StatutCible } from "@/shared/domain/vocabulaire";
-import { STATUTS_NON_JOINT, type BeneficiaireVague } from "../domain/vague";
+import { appelantInitial, appelantsHabituels, STATUTS_NON_JOINT, type BeneficiaireVague } from "../domain/vague";
 import type { Alerte, Campagne, CampagneResume, CibleTableau, DepotCrise, Membre } from "../application/ports";
+import { notesDeLAlerte } from "./notes-alerte";
+
+async function notesDeLAlerteDeLaCampagne(communeId: string, beneficiaireId: string, campagneId: string) {
+  const [c] = await db.select({ alerteId: s.campagnes.alerteId }).from(s.campagnes).where(and(eq(s.campagnes.communeId, communeId), eq(s.campagnes.id, campagneId)));
+  return c ? notesDeLAlerte(communeId, beneficiaireId, c.alerteId, campagneId) : [];
+}
 
 const niveauEffectif = sql<NiveauPriorite>`coalesce(${s.beneficiaires.niveauForce}, ${s.beneficiaires.niveauPriorite})`;
 
@@ -258,7 +264,7 @@ export const depotCriseDrizzle: DepotCrise = {
       const ids = benefs.map((b) => b.id);
       if (ids.length === 0) return [];
 
-      const [passages, indispos, dejaJoints, veille] = await Promise.all([
+      const [passages, indispos, dejaJoints, veille, confiees] = await Promise.all([
         tx
           .select({
             beneficiaireId: s.prisesEnCharge.beneficiaireId,
@@ -293,7 +299,13 @@ export const depotCriseDrizzle: DepotCrise = {
             ),
           ),
         vagueVeille(campagne.id, jour),
+        tx
+          .select({ beneficiaireId: s.assignations.beneficiaireId, benevoleId: s.assignations.utilisateurId, confieeLe: s.assignations.assigneLe })
+          .from(s.assignations)
+          .innerJoin(s.utilisateurs, eq(s.utilisateurs.id, s.assignations.utilisateurId))
+          .where(and(inArray(s.assignations.beneficiaireId, ids), eq(s.utilisateurs.role, "benevole"), eq(s.utilisateurs.actif, true))),
       ]);
+      const habituels = appelantsHabituels(confiees);
 
       const faits: BeneficiaireVague[] = benefs.map((b) => ({
         id: b.id,
@@ -327,6 +339,7 @@ export const depotCriseDrizzle: DepotCrise = {
             campagneId: campagne.id,
             beneficiaireId: g.beneficiaireId,
             vagueDate: jour,
+            assigneA: appelantInitial(g, habituels),
             canal: g.canal,
             statut: g.statut,
             exclue: g.exclue,
@@ -400,6 +413,8 @@ export const depotCriseDrizzle: DepotCrise = {
       nbContactsCercle: n,
     };
   },
+
+  notesAlerte: notesDeLAlerteDeLaCampagne,
 
   async obtenirFicheAppel(communeId, beneficiaireId) {
     const [l] = await db

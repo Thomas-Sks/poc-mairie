@@ -1,17 +1,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Contexte } from "@/shared/application/contexte";
-import { aujourdhui, formaterDate, formaterDateLongue } from "@/shared/domain/dates";
+import { aujourdhui, formaterDate } from "@/shared/domain/dates";
 import { EnTetePage, EtatVide, Page, Pastille, Section, Surface } from "@/shared/ui/elements";
 import { libelleDans, libelleRetard } from "../domain/taches-du-jour";
 import type { RappelVue, VueTaches } from "../application/obtenir-taches-du-jour";
 import { casDUsage } from "../infrastructure";
 import { ActionsRappel } from "./actions-rappel";
-
-const FICHES_AFFICHEES = 5;
 
 const FORMAT_JOUR = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 const formaterJour = (d: string) => FORMAT_JOUR.format(new Date(`${d}T00:00:00Z`));
@@ -92,8 +91,6 @@ function ChoixVue({ equipe }: { equipe: boolean }) {
 
 export async function PageTaches({ ctx, equipe }: { ctx: Contexte; equipe: boolean }) {
   const v = await casDUsage.obtenirTachesDuJour(ctx, { equipe });
-  const fichesVisibles = v.fichesAReverifier.slice(0, FICHES_AFFICHEES);
-  const fichesRestantes = v.fichesAReverifier.length - fichesVisibles.length;
 
   return (
     <Page>
@@ -105,6 +102,19 @@ export async function PageTaches({ ctx, equipe }: { ctx: Contexte; equipe: boole
           </>
         }
       />
+
+      <form action="/assistant" className="flex flex-col gap-2">
+        <label htmlFor="question-accueil" className="text-base font-semibold">
+          Une question sur le registre ? Un chiffre, une liste à exporter, une fiche…
+        </label>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Input id="question-accueil" name="q" required maxLength={300} autoComplete="off" placeholder="Ex. Combien de personnes P1 vivent seules ?" className="h-12 flex-1 text-lg" />
+          <Button type="submit" size="lg" className="h-12">
+            <Send aria-hidden />
+            Demander à l&apos;assistant
+          </Button>
+        </div>
+      </form>
 
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-8">
@@ -194,32 +204,6 @@ export async function PageTaches({ ctx, equipe }: { ctx: Contexte; equipe: boole
                     />
                   ))}
                 </ul>
-              </Surface>
-            </Section>
-          )}
-
-          {v.fichesAReverifier.length > 0 && (
-            <Section titre={`Fiches à revérifier (${v.fichesAReverifier.length})`}>
-              <Surface>
-                <ul className="divide-y">
-                  {fichesVisibles.map((f) => (
-                    <LigneLien
-                      key={f.personne.id}
-                      href={lienFiche(f.personne.id)}
-                      titre={f.personne.nom}
-                      detail={`Dernière vérification le ${formaterDateLongue(f.depuis)}`}
-                    />
-                  ))}
-                </ul>
-                {fichesRestantes > 0 && (
-                  <Link
-                    href={`/beneficiaires?non-verifiee-depuis=${v.verificationMois}`}
-                    className="flex min-h-11 items-center justify-between gap-3 border-t px-5 py-3 font-medium text-primary hover:bg-muted"
-                  >
-                    Voir les {v.fichesAReverifier.length} fiches à revérifier
-                    <ChevronRight className="size-4" aria-hidden />
-                  </Link>
-                )}
               </Surface>
             </Section>
           )}

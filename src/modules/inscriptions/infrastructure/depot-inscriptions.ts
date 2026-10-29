@@ -2,9 +2,10 @@ import "server-only";
 import { and, asc, desc, eq, inArray, max, ne, notInArray, sql } from "drizzle-orm";
 import { db } from "@/shared/infrastructure/db/client";
 import * as s from "@/shared/infrastructure/db/schema";
-import { GRILLE_PAR_DEFAUT } from "@/shared/domain/priorite";
+import { completerGrille } from "@/shared/domain/priorite";
 import { chiffresTelephone, cleTexte } from "@/shared/domain/normalisation";
 import type { FicheExistante } from "../domain/doublons";
+import { RGPD_PAR_DEFAUT } from "../domain/rgpd";
 import type { CommunePubliqueRepository, InscriptionEnregistree, InscriptionRepository, StatutInscription } from "../application/ports";
 
 const colonnesFiche = {
@@ -248,7 +249,6 @@ export const inscriptionRepositoryDrizzle: InscriptionRepository = {
           teleassistance: cible.teleassistance || source.teleassistance,
           troublesAuditifs: cible.troublesAuditifs || source.troublesAuditifs,
           consentementIa: cible.consentementIa || source.consentementIa,
-          dateDerniereVerification: maintenant.toISOString().slice(0, 10),
           updatedAt: maintenant,
         })
         .where(eq(s.beneficiaires.id, cible.id));
@@ -286,7 +286,7 @@ export const inscriptionRepositoryDrizzle: InscriptionRepository = {
       .innerJoin(s.contacts, eq(s.contacts.id, s.liensCercle.contactId))
       .where(eq(s.liensCercle.beneficiaireId, b.id));
     const prises = await db
-      .select({ type: s.prisesEnCharge.type, possedeCles: s.prisesEnCharge.possedeCles, dateFin: s.prisesEnCharge.dateFin })
+      .select({ type: s.prisesEnCharge.type, possedeCles: s.prisesEnCharge.possedeCles, dateFin: s.prisesEnCharge.dateFin, gir: s.prisesEnCharge.gir })
       .from(s.prisesEnCharge)
       .where(eq(s.prisesEnCharge.beneficiaireId, b.id));
     return {
@@ -298,6 +298,8 @@ export const inscriptionRepositoryDrizzle: InscriptionRepository = {
         troublesCognitifs: b.troublesCognitifs,
         pasDeTelephone: b.pasDeTelephone,
         retourHospitalisationLe: b.retourHospitalisationLe,
+        gir: b.gir,
+        aideCaisseRetraite: b.aideCaisseRetraite,
       },
       foyer: { sousLesToits: foyer.sousLesToits, pieceFraiche: foyer.pieceFraiche, etage: foyer.etage, typeLogement: foyer.typeLogement },
       cercle,
@@ -314,7 +316,7 @@ export const inscriptionRepositoryDrizzle: InscriptionRepository = {
 
   async grilleScore(communeId) {
     const [c] = await db.select({ parametres: s.communes.parametres }).from(s.communes).where(eq(s.communes.id, communeId));
-    return c?.parametres.grilleScore ?? GRILLE_PAR_DEFAUT;
+    return completerGrille(c?.parametres.grilleScore);
   },
 };
 
@@ -344,8 +346,8 @@ export const communePubliqueDrizzle: CommunePubliqueRepository = {
       codePostal: c.codePostal,
       structureNom: c.structureNom,
       structureTelephone: c.structureTelephone,
-      rgpd: c.parametres.rgpd,
-      grilleScore: c.parametres.grilleScore ?? GRILLE_PAR_DEFAUT,
+      rgpd: RGPD_PAR_DEFAUT,
+      grilleScore: completerGrille(c.parametres.grilleScore),
     };
   },
 };

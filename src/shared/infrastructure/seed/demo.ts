@@ -18,6 +18,7 @@ import type {
   Besoin,
   Deplacement,
   ModeDeVie,
+  OrigineInscription,
   Relation,
   StatutCible,
   TypeInteraction,
@@ -137,16 +138,6 @@ export async function reinitialiserDemo(db: Db, jour: DateISO = aujourdhui()) {
       centre: { lat: 50.6435, lon: 2.9935 },
       parametres: {
         grilleScore: GRILLE_PAR_DEFAUT,
-        relance: RELANCE_PAR_DEFAUT,
-        anniversaireJoursAvant: 3,
-        verificationMois: 12,
-        rgpd: {
-          responsable: "CCAS de Lomme, représenté par sa présidente",
-          conservation: "Vos données sont conservées 1 an après votre inscription effective.",
-          dpo: "dpo@mairie-lomme.example",
-          droits:
-            "Vous pouvez accéder à vos données, les rectifier ou demander votre désinscription du registre à tout moment auprès de la Maison des seniors.",
-        },
       },
     })
     .returning();
@@ -252,8 +243,9 @@ export async function reinitialiserDemo(db: Db, jour: DateISO = aujourdhui()) {
     const mobile = !fixe || chance(0.4);
     const deplacement = pondere<Deplacement>([["seul", 45], ["canne", 22], ["deambulateur", 15], ["fauteuil", 10], ["immobilise", 4]]);
     const inscription = ajouterJours(jour, -entre(40, 2200));
-    const verification = chance(0.82) ? ajouterJours(jour, -entre(5, 330)) : ajouterJours(jour, -entre(380, 800));
     const consentementIa = chance(0.4);
+    // Décret n° 2026-590 : une part des fiches vient des listes transmises par le Département ou les caisses.
+    const origine = pondere<OrigineInscription>([["demande", 45], ["departement", 40], ["caisse_retraite", 15]]);
     return {
       communeId,
       foyerId: foyers[foyerIdx].id,
@@ -286,7 +278,9 @@ export async function reinitialiserDemo(db: Db, jour: DateISO = aujourdhui()) {
       tags: chance(0.25) ? [pick(TAGS)] : [],
       infoPrioritaire: chance(0.15) ? pick(INFOS_PRIORITAIRES) : null,
       dateInscription: inscription,
-      dateDerniereVerification: verification < inscription ? inscription : verification,
+      caisseRetraite: opts.handicap && age < 60 ? null : pondere([["carsat", 66], ["cnracl", 12], ["ssi", 8], ["msa", 5], ["ircantec", 5], ["autre", 4]]),
+      aideCaisseRetraite: origine === "caisse_retraite" || chance(0.08),
+      origineInscription: origine,
       consentementRegistre: true,
       personneInformee: true,
       consentementIa,
@@ -336,8 +330,6 @@ export async function reinitialiserDemo(db: Db, jour: DateISO = aujourdhui()) {
     b.pasDeTelephone = true;
     b.preferenceContact = "visite";
   }
-  // Fiches à revérifier (qualité des données)
-  for (const { b } of seuls.slice(6, 9)) b.dateDerniereVerification = ajouterJours(jour, -entre(400, 600));
 
   const beneficiaires = await db.insert(s.beneficiaires).values(benefs).returning();
   const foyerDe = new Map(foyers.map((f) => [f.id, f]));
@@ -422,12 +414,12 @@ export async function reinitialiserDemo(db: Db, jour: DateISO = aujourdhui()) {
   );
 
   type NouvellePec = typeof s.prisesEnCharge.$inferInsert;
-  const pecParBenef = new Map<string, { type: TypePriseEnCharge; possedeCles: boolean; dateFin: DateISO | null }[]>();
+  const pecParBenef = new Map<string, { type: TypePriseEnCharge; possedeCles: boolean; dateFin: DateISO | null; gir: number | null }[]>();
   const creneaux: { pecIndex: number; joursSemaine: number[]; heureDebut: string; heureFin: string }[] = [];
   const pecs: NouvellePec[] = [];
   const ajouterPec = (benefId: string, pec: Omit<NouvellePec, "beneficiaireId">, creneau?: { jours: number[]; debut: string; fin: string }) => {
     pecs.push({ ...pec, beneficiaireId: benefId });
-    pecParBenef.set(benefId, [...(pecParBenef.get(benefId) ?? []), { type: pec.type, possedeCles: pec.possedeCles ?? false, dateFin: pec.dateFin ?? null }]);
+    pecParBenef.set(benefId, [...(pecParBenef.get(benefId) ?? []), { type: pec.type, possedeCles: pec.possedeCles ?? false, dateFin: pec.dateFin ?? null, gir: pec.gir ?? null }]);
     if (creneau) creneaux.push({ pecIndex: pecs.length - 1, joursSemaine: creneau.jours, heureDebut: creneau.debut, heureFin: creneau.fin });
   };
 
@@ -851,7 +843,7 @@ async function creerInscriptionsEnAttente(db: Db, { communeId, jour, ban }: { co
       const dateNaissance = `${Number(jour.slice(0, 4)) - p.age}-0${entre(1, 9)}-1${entre(0, 9)}`;
       const r = calculerScore(
         extraireFaits({
-          beneficiaire: { dateNaissance, modeDeVie: d.modeDeVie, deplacement: p.deplacement, protection: "non", troublesCognitifs: false, pasDeTelephone: false, retourHospitalisationLe: null },
+          beneficiaire: { dateNaissance, modeDeVie: d.modeDeVie, deplacement: p.deplacement, protection: "non", troublesCognitifs: false, pasDeTelephone: false, retourHospitalisationLe: null, gir: null, aideCaisseRetraite: false },
           foyer: { sousLesToits: d.sousLesToits, pieceFraiche: !d.sousLesToits, etage: d.etage, typeLogement: "appartement" },
           cercle: [{ relation: d.contact.relation, possedeCles: d.contact.possedeCles, ville: d.contact.ville, telephone: contact.telephone }],
           prisesEnCharge: [],

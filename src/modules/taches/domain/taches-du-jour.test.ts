@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   anniversairesAVenir,
   contactsDus,
-  fichesAReverifier,
   libelleRetard,
   nouvelleEcheance,
-  retirerMois,
   selectionnerRappels,
   selectionnerTachesDuJour,
   type PersonneSuivie,
@@ -31,7 +29,6 @@ const personne = (p: Partial<PersonneSuivie>): PersonneSuivie => ({
   nom: p.nom ?? "Mme Test",
   dateNaissance: "1950-01-15",
   dateInscription: "2024-01-01",
-  dateDerniereVerification: "2026-06-01",
   frequenceContactJours: null,
   dernierContact: null,
   ...p,
@@ -92,31 +89,6 @@ describe("anniversairesAVenir", () => {
   });
 });
 
-describe("retirerMois", () => {
-  it("retire des mois en gérant les fins de mois et les années", () => {
-    expect(retirerMois("2026-10-28", 12)).toBe("2025-10-28");
-    expect(retirerMois("2026-03-31", 1)).toBe("2026-02-28");
-    expect(retirerMois("2026-01-15", 2)).toBe("2025-11-15");
-  });
-});
-
-describe("fichesAReverifier", () => {
-  it("retient les fiches non vérifiées depuis plus de N mois, les plus anciennes d'abord", () => {
-    const res = fichesAReverifier(
-      [
-        personne({ id: "recente", dateDerniereVerification: "2026-01-10" }),
-        personne({ id: "ancienne", dateDerniereVerification: "2024-05-01" }),
-        personne({ id: "limite", dateDerniereVerification: "2025-10-28" }),
-        personne({ id: "jamais", dateDerniereVerification: null, dateInscription: "2025-02-01" }),
-      ],
-      JOUR,
-      12,
-    );
-    expect(res.map((f) => f.personne.id)).toEqual(["ancienne", "jamais"]);
-    expect(res[1].depuis).toBe("2025-02-01");
-  });
-});
-
 describe("contactsDus", () => {
   it("retient les personnes dont le dernier contact dépasse la fréquence cible", () => {
     const res = contactsDus(
@@ -140,18 +112,16 @@ describe("contactsDus", () => {
 });
 
 describe("selectionnerTachesDuJour", () => {
-  it("assemble les quatre familles de tâches", () => {
+  it("assemble les familles de tâches", () => {
     const res = selectionnerTachesDuJour(
       {
         rappels: [rappel({})],
-        personnes: [personne({ dateNaissance: "1936-10-29", dateDerniereVerification: "2020-01-01" })],
-        parametres: { anniversaireJoursAvant: 3, verificationMois: 12 },
+        personnes: [personne({ dateNaissance: "1936-10-29" })],
       },
       JOUR,
     );
     expect(res.rappels).toHaveLength(1);
     expect(res.anniversaires).toHaveLength(1);
-    expect(res.fichesAReverifier).toHaveLength(1);
     expect(res.contactsDus).toHaveLength(0);
   });
 });

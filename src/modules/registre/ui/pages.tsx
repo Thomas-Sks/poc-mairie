@@ -24,8 +24,7 @@ const droitsDe = (ctx: Contexte): Droits => ({
   archiver: peut(ctx.utilisateur.role, "fiches.archiver"),
 });
 
-/** `nonVerifieeDepuisMois` : filtre initial lu depuis l'URL (lien « fiches à revérifier » de l'accueil). */
-export async function PageBeneficiaires({ nonVerifieeDepuisMois }: { nonVerifieeDepuisMois?: number } = {}) {
+export async function PageBeneficiaires() {
   const ctx = await contexteAvec("fiches.lire");
   const [referentiels, vues] = await Promise.all([casDUsage.chargerReferentiels(ctx), casDUsage.listerVues(ctx)]);
   const droits = droitsDe(ctx);
@@ -47,7 +46,6 @@ export async function PageBeneficiaires({ nonVerifieeDepuisMois }: { nonVerifiee
         droits={droits}
         vues={vues}
         ressource="beneficiaires"
-        configInitiale={nonVerifieeDepuisMois ? { filtre: { version: 1, nonVerifieeDepuisMois } } : undefined}
       />
     </Page>
   );

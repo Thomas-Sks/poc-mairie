@@ -1,5 +1,5 @@
 import type { DateISO } from "@/shared/domain/dates";
-import type { ParametresTaches, PersonneSuivie, Rappel } from "../domain/taches-du-jour";
+import type { PersonneSuivie, Rappel } from "../domain/taches-du-jour";
 
 export type RappelAvecAssigne = Rappel & { assigneNom: string | null };
 
@@ -11,8 +11,7 @@ export interface TachesRepository {
   trouverRappel(communeId: string, id: string): Promise<Rappel | null>;
   marquerFait(communeId: string, id: string, at: Date): Promise<void>;
   reporter(communeId: string, id: string, echeance: DateISO): Promise<void>;
-  /** Fiches actives avec les dates utiles (naissance, vérification, dernier contact). */
+  /** Fiches actives avec les dates utiles (naissance, inscription, dernier contact). */
   personnesActives(communeId: string): Promise<PersonneSuivie[]>;
   inscriptionsEnAttente(communeId: string): Promise<InscriptionEnAttente[]>;
-  parametres(communeId: string): Promise<ParametresTaches>;
 }

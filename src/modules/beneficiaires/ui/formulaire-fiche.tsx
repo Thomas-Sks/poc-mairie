@@ -8,6 +8,10 @@ import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Bandeau, Surface } from "@/shared/ui/elements";
 import {
+  CAISSE_RETRAITE_LIBELLES,
+  CAISSES_RETRAITE,
+  ORIGINE_INSCRIPTION_LIBELLES,
+  ORIGINES_INSCRIPTION,
   CATEGORIE_LIBELLES,
   CATEGORIES,
   CIVILITES,
@@ -145,6 +149,24 @@ export function FormulaireFiche({
             <ChampTexte libelle="Téléphone du mandataire" name="mandataireTelephone" type="tel" defaultValue={b.mandataireTelephone ?? ""} erreur={e.mandataireTelephone} />
           </>
         )}
+      </SectionFormulaire>
+
+      <SectionFormulaire titre="Aides et droits">
+        <ChampSelect
+          libelle="Caisse de retraite"
+          name="caisseRetraite"
+          defaultValue={b.caisseRetraite ?? ""}
+          vide="Non renseignée"
+          options={options(CAISSES_RETRAITE, CAISSE_RETRAITE_LIBELLES)}
+        />
+        <ChampSelect
+          libelle="Origine de l'inscription"
+          name="origineInscription"
+          defaultValue={b.origineInscription}
+          options={options(ORIGINES_INSCRIPTION, ORIGINE_INSCRIPTION_LIBELLES)}
+        />
+        <CaseACocher name="aideCaisseRetraite" defaultChecked={b.aideCaisseRetraite} libelle="Reçoit une aide de sa caisse de retraite" />
+        <p className="text-sm text-muted-foreground sm:col-span-2">L&apos;APA et la PCH se déclarent dans l&apos;onglet Intervenants, avec le niveau GIR.</p>
       </SectionFormulaire>
 
       {droitSante && sante && (

@@ -16,6 +16,7 @@ import {
   House,
   Info,
   MessageSquareText,
+  NotebookPen,
   PhoneMissed,
   PhoneOff,
   Siren,
@@ -25,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { formaterDateHeure } from "@/shared/domain/dates";
 import type { Besoin, StatutCible } from "@/shared/domain/vocabulaire";
 import { Bandeau, Surface } from "@/shared/ui/elements";
 import type { EcranAppel as DonneesAppel } from "../application/appel";
@@ -279,6 +281,27 @@ export function EcranAppel({ donnees }: { donnees: DonneesAppel }) {
               </>
             ) : (
               <p className="font-semibold">Pas de numéro enregistré : demandez une visite à domicile ci-dessous.</p>
+            )}
+          </Surface>
+
+          <Surface aria-labelledby="titre-notes-alerte" className="flex flex-col gap-3 p-5 sm:p-6">
+            <h2 id="titre-notes-alerte" className="flex items-center gap-2 text-xl font-semibold">
+              <NotebookPen className="size-6 text-primary" aria-hidden />
+              Notes de cette alerte
+            </h2>
+            {donnees.notesAlerte.length === 0 ? (
+              <p className="text-muted-foreground">Personne n&apos;a encore écrit de note pendant cette alerte.</p>
+            ) : (
+              <ul className="flex flex-col divide-y">
+                {donnees.notesAlerte.map((n, i) => (
+                  <li key={i} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                    <span className="text-base text-muted-foreground">
+                      {n.auteur}, {formaterDateHeure(n.at)}
+                    </span>
+                    <span className="text-lg">{n.texte}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </Surface>
 

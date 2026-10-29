@@ -20,8 +20,6 @@ export type MembreEquipe = {
   actif: boolean;
 };
 
-export type NouveauMembre = { prenom: string; nom: string; email: string; telephone: string | null; role: Role };
-
 export interface ParametresRepository {
   lire(communeId: string): Promise<ParametresCommune>;
   enregistrer(communeId: string, parametres: ParametresCommune): Promise<void>;
@@ -29,8 +27,6 @@ export interface ParametresRepository {
   fichesActivesPourScore(communeId: string): Promise<FichePourScore[]>;
   enregistrerScores(communeId: string, scores: { id: string; score: number; niveauPriorite: NiveauPriorite }[]): Promise<void>;
   equipe(communeId: string): Promise<MembreEquipe[]>;
-  emailUtilise(email: string): Promise<boolean>;
-  creerMembre(communeId: string, membre: NouveauMembre): Promise<MembreEquipe>;
 }
 
 /** Rechargement du jeu de démonstration (§10.2). */

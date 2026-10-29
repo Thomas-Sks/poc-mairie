@@ -58,6 +58,7 @@ export function MaListe({
   suivanteId,
   maintenant,
   rendues,
+  nbPersonnesConfiees,
 }: {
   prenom: string;
   aFaire: PersonneDeMaListe[];
@@ -65,6 +66,7 @@ export function MaListe({
   suivanteId: string | null;
   maintenant: Date;
   rendues: number | null;
+  nbPersonnesConfiees: number;
 }) {
   const vide = aFaire.length === 0 && faits.length === 0;
   const prochainRappel = aFaire
@@ -97,7 +99,11 @@ export function MaListe({
       {vide ? (
         <Surface className="flex flex-col gap-2 p-6">
           <p className="text-xl font-semibold">Aucun appel à passer pour le moment.</p>
-          <p className="text-muted-foreground">Vous serez prévenu quand une alerte sera déclenchée.</p>
+          <p className="text-muted-foreground">
+            {nbPersonnesConfiees > 0
+              ? `${nbPersonnesConfiees} personne${nbPersonnesConfiees > 1 ? "s vous sont confiées" : " vous est confiée"}. Elles apparaîtront ici dès qu'une alerte sera déclenchée, et vous serez prévenu par SMS.`
+              : "Vous serez prévenu quand une alerte sera déclenchée."}
+          </p>
         </Surface>
       ) : (
         <>

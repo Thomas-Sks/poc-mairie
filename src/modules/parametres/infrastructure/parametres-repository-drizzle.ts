@@ -3,6 +3,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/shared/infrastructure/db/client";
 import { beneficiaires, communes, contacts, foyers, liensCercle, prisesEnCharge, utilisateurs } from "@/shared/infrastructure/db/schema";
 import type { EntreeFaits } from "@/modules/beneficiaires/domain/faits-priorite";
+import { completerGrille } from "@/shared/domain/priorite";
 import type { ParametresRepository } from "../application/ports";
 
 const colonnesMembre = {
@@ -25,7 +26,7 @@ export const parametresRepositoryDrizzle: ParametresRepository = {
   async lire(communeId) {
     const c = await db.query.communes.findFirst({ where: eq(communes.id, communeId), columns: { parametres: true } });
     if (!c) throw new Error("Commune introuvable.");
-    return c.parametres;
+    return { ...c.parametres, grilleScore: completerGrille(c.parametres.grilleScore) };
   },
 
   async enregistrer(communeId, parametres) {
@@ -59,6 +60,7 @@ export const parametresRepositoryDrizzle: ParametresRepository = {
           type: prisesEnCharge.type,
           possedeCles: prisesEnCharge.possedeCles,
           dateFin: prisesEnCharge.dateFin,
+          gir: prisesEnCharge.gir,
         })
         .from(prisesEnCharge)
         .where(inArray(prisesEnCharge.beneficiaireId, ids)),
@@ -76,6 +78,8 @@ export const parametresRepositoryDrizzle: ParametresRepository = {
           troublesCognitifs: b.troublesCognitifs,
           pasDeTelephone: b.pasDeTelephone,
           retourHospitalisationLe: b.retourHospitalisationLe,
+          gir: b.gir,
+          aideCaisseRetraite: b.aideCaisseRetraite,
         },
         foyer: { sousLesToits: f.sousLesToits, pieceFraiche: f.pieceFraiche, etage: f.etage, typeLogement: f.typeLogement },
         cercle: cercleDe.get(b.id) ?? [],
@@ -99,15 +103,5 @@ export const parametresRepositoryDrizzle: ParametresRepository = {
 
   async equipe(communeId) {
     return db.select(colonnesMembre).from(utilisateurs).where(eq(utilisateurs.communeId, communeId)).orderBy(asc(utilisateurs.createdAt));
-  },
-
-  async emailUtilise(email) {
-    const u = await db.query.utilisateurs.findFirst({ where: eq(sql`lower(${utilisateurs.email})`, email), columns: { id: true } });
-    return Boolean(u);
-  },
-
-  async creerMembre(communeId, membre) {
-    const [u] = await db.insert(utilisateurs).values({ ...membre, communeId }).returning(colonnesMembre);
-    return u;
   },
 };

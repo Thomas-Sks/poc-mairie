@@ -238,7 +238,10 @@ export async function reintegrerCible(deps: Deps, ctx: Contexte, entree: { cible
   await deps.depot.mettreAJourCible(cible.id, { exclue: false, statut: "a_appeler", couverture: null });
 }
 
-/** E8-US6 : répartition automatique (tourniquet dans l'ordre RG-02) des appels restants de la vague. */
+/**
+ * E8-US6 : répartition automatique (tourniquet dans l'ordre RG-02) des appels restants de la vague.
+ * Les personnes déjà confiées à leur bénévole habituel restent chez lui.
+ */
 export async function repartirCibles(
   deps: Deps,
   ctx: Contexte,
@@ -252,7 +255,7 @@ export async function repartirCibles(
   const vague = choisirVague(vagues, aujourdhui(ctx.maintenant));
   if (!vague) return { nbCibles: 0, smsSimules: [] };
   const cibles = (await deps.depot.listerCibles(ctx.commune.id, campagne.id, vague))
-    .filter((c) => !c.exclue && c.canal === "humain" && !estTraitee(c.statut))
+    .filter((c) => !c.exclue && c.canal === "humain" && !estTraitee(c.statut) && c.assigneA === null)
     .sort((a, b) => a.rang - b.rang);
   const lots = repartir(cibles, entree.utilisateurIds.length);
   await deps.depot.assigner(

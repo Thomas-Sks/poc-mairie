@@ -4,17 +4,12 @@ import { ROLE_LIBELLES } from "@/shared/domain/vocabulaire";
 import { Bandeau, EnTetePage, Page, Pastille, Section, Surface } from "@/shared/ui/elements";
 import { casDUsage } from "../infrastructure";
 import { FormulaireGrille } from "./formulaire-grille";
-import { FormulaireRelances } from "./formulaire-relances";
-import { FormulaireRgpd } from "./formulaire-rgpd";
-import { InviterBenevole } from "./inviter-benevole";
 import { MaquetteAssistantIa } from "./maquette-assistant-ia";
 import { ReinitialiserDemo } from "./reinitialiser-demo";
 
 const SECTIONS = [
+  { id: "criteres", libelle: "Critères de priorité" },
   { id: "equipe", libelle: "Équipe" },
-  { id: "grille", libelle: "Grille de score" },
-  { id: "relances", libelle: "Relances et anniversaires" },
-  { id: "rgpd", libelle: "Textes RGPD" },
   { id: "assistant-ia", libelle: "Assistant IA" },
   { id: "demo", libelle: "Démo" },
 ];
@@ -35,7 +30,7 @@ export async function PageParametres({ ctx }: { ctx: Contexte }) {
 
   return (
     <Page className="max-w-5xl">
-      <EnTetePage titre="Paramètres" description={`Réglages du registre de ${ctx.commune.nom}, de l'équipe et de la démonstration.`} />
+      <EnTetePage titre="Paramètres" description={`Comment le registre de ${ctx.commune.nom} décide qui appeler en premier.`} />
 
       <nav aria-label="Sections des paramètres" className="-mt-4 flex flex-wrap gap-x-1 gap-y-1">
         {SECTIONS.map((s) => (
@@ -45,7 +40,18 @@ export async function PageParametres({ ctx }: { ctx: Contexte }) {
         ))}
       </nav>
 
-      <Bloc id="equipe" titre="Équipe" actions={<InviterBenevole />}>
+      <Bloc id="criteres" titre="Critères de priorité">
+        <div className="-mt-2 flex max-w-[65ch] flex-col gap-2 text-muted-foreground">
+          <p>Chaque critère rempli ajoute des points. Le total (sur 100) classe la personne en priorité 1, 2 ou 3 : on appelle d&apos;abord les P1.</p>
+          <p>
+            Depuis le décret n° 2026-590 du 3 juillet 2026, le Département (APA, PCH) et les caisses de retraite transmettent chaque année leurs
+            bénéficiaires au registre. Le nombre d&apos;inscrits va fortement augmenter : ces aides comptent dans le score pour repérer les plus fragiles.
+          </p>
+        </div>
+        <FormulaireGrille initiale={p.grilleScore} />
+      </Bloc>
+
+      <Bloc id="equipe" titre="Équipe">
         <Surface>
           <ul className="divide-y">
             {equipe.map((u) => (
@@ -66,24 +72,6 @@ export async function PageParametres({ ctx }: { ctx: Contexte }) {
             ))}
           </ul>
         </Surface>
-      </Bloc>
-
-      <Bloc id="grille" titre="Grille de score">
-        <p className="-mt-2 max-w-[65ch] text-muted-foreground">
-          Les points s&apos;additionnent pour donner un score de 0 à 100 qui fixe la priorité d&apos;appel de chaque personne.
-        </p>
-        <FormulaireGrille initiale={p.grilleScore} />
-      </Bloc>
-
-      <Bloc id="relances" titre="Relances et anniversaires">
-        <FormulaireRelances
-          initiales={{ relance: p.relance, anniversaireJoursAvant: p.anniversaireJoursAvant, verificationMois: p.verificationMois }}
-        />
-      </Bloc>
-
-      <Bloc id="rgpd" titre="Textes RGPD">
-        <p className="-mt-2 max-w-[65ch] text-muted-foreground">Ces textes informent les personnes inscrites au registre de leurs droits.</p>
-        <FormulaireRgpd initiaux={p.rgpd} />
       </Bloc>
 
       <Bloc id="assistant-ia" titre="Assistant IA">

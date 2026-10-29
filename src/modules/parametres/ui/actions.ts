@@ -38,6 +38,11 @@ const schemaGrille = z.object({
   aucunePriseEnCharge: points,
   retourHospitalisation: points,
   pasDeTelephone: points,
+  apaGir12: points,
+  apaGir34: points,
+  apaGir56: points,
+  pch: points,
+  aideCaisseRetraite: points,
   seuilP1: points,
   seuilP2: points,
 });
@@ -57,55 +62,6 @@ export async function enregistrerGrilleEtRecalculerAction(grille: unknown): Prom
     },
     ["/parametres", "/", "/beneficiaires"],
   );
-}
-
-const heure = z.string().regex(/^\d{2}:\d{2}$/);
-
-const schemaRelances = z.object({
-  relance: z.object({
-    nbTentatives: z.number().int().min(1).max(5),
-    delaisMinutes: z.array(z.number().int().min(5).max(1440)).max(4),
-    plageDebut: heure,
-    plageFin: heure,
-    escaladeCercle: z.boolean(),
-  }),
-  anniversaireJoursAvant: z.number().int().min(0).max(30),
-  verificationMois: z.number().int().min(1).max(60),
-});
-
-export async function enregistrerRelancesAction(entree: unknown): Promise<ResultatAction> {
-  return executer(
-    async () => {
-      await casDUsage.modifierRelancesEtRappels(await obtenirContexte(), schemaRelances.parse(entree));
-      return "Paramètres de relance et de rappel enregistrés.";
-    },
-    ["/parametres", "/"],
-  );
-}
-
-const texte = z.string().trim().min(1).max(2000);
-
-export async function enregistrerRgpdAction(entree: unknown): Promise<ResultatAction> {
-  return executer(async () => {
-    const rgpd = z.object({ responsable: texte, conservation: texte, dpo: texte, droits: texte }).parse(entree);
-    await casDUsage.modifierTextesRgpd(await obtenirContexte(), rgpd);
-    return "Textes RGPD enregistrés.";
-  });
-}
-
-export async function inviterBenevoleAction(entree: unknown): Promise<ResultatAction> {
-  return executer(async () => {
-    const e = z
-      .object({
-        prenom: z.string().trim().min(1).max(80),
-        nom: z.string().trim().min(1).max(80),
-        telephone: z.string().trim().max(30).nullable(),
-        email: z.email(),
-      })
-      .parse(entree);
-    const membre = await casDUsage.inviterBenevole(await obtenirContexte(), e);
-    return `Invitation envoyée à ${membre.prenom} ${membre.nom} (${membre.email}). Envoi simulé dans la démonstration.`;
-  });
 }
 
 export async function reinitialiserDemoAction(): Promise<ResultatAction> {

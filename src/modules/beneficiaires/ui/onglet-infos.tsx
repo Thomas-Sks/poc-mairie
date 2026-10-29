@@ -7,9 +7,11 @@ import type { ReactNode } from "react";
 import { Bot, ChevronRight, Lock, Users } from "lucide-react";
 import { formaterDate, formaterDateHeure, prochainAnniversaire, aujourdhui } from "@/shared/domain/dates";
 import {
+  CAISSE_RETRAITE_LIBELLES,
   CATEGORIE_LIBELLES,
   DEPLACEMENT_LIBELLES,
   MODE_DE_VIE_LIBELLES,
+  ORIGINE_INSCRIPTION_LIBELLES,
   PREFERENCE_CONTACT_LIBELLES,
   PROTECTION_LIBELLES,
   SEXE_LIBELLES,
@@ -117,6 +119,16 @@ export async function OngletInfos({ id }: { id: string }) {
                     </span>
                   ),
               },
+            ]}
+          />
+        </Bloc>
+
+        <Bloc titre="Aides et droits">
+          <Renseignees
+            items={[
+              { libelle: "Caisse de retraite", valeur: b.caisseRetraite && CAISSE_RETRAITE_LIBELLES[b.caisseRetraite] },
+              { libelle: "Aide de la caisse de retraite", valeur: b.aideCaisseRetraite ? "Oui" : "Non" },
+              { libelle: "Origine de l'inscription", valeur: ORIGINE_INSCRIPTION_LIBELLES[b.origineInscription] },
             ]}
           />
         </Bloc>
@@ -232,7 +244,6 @@ export async function OngletInfos({ id }: { id: string }) {
             items={[
               { libelle: "Prochain anniversaire", valeur: `${formaterDate(anniversaire.date)} (${anniversaire.age} ans)` },
               { libelle: "Inscription", valeur: formaterDate(fiche.dateInscription) },
-              { libelle: "Dernière vérification", valeur: fiche.dateDerniereVerification && formaterDate(fiche.dateDerniereVerification) },
             ]}
           />
         </Bloc>

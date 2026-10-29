@@ -1,9 +1,10 @@
 import "server-only";
-import { and, asc, eq, isNotNull, or } from "drizzle-orm";
+import { and, asc, count, eq, isNotNull, or } from "drizzle-orm";
 import { verrouActif } from "@/shared/domain/campagne";
 import { calculerAge } from "@/shared/domain/dates";
 import { db } from "@/shared/infrastructure/db/client";
-import { beneficiaires, campagnes, ciblesCampagne, contacts, liensCercle, utilisateurs } from "@/shared/infrastructure/db/schema";
+import { notesDeLAlerte } from "@/modules/crise/infrastructure/notes-alerte";
+import { assignations, beneficiaires, campagnes, ciblesCampagne, contacts, liensCercle, utilisateurs } from "@/shared/infrastructure/db/schema";
 import type { FicheAppel, LectureBenevole, PersonneDeMaListe } from "../application/ports";
 
 /** Filtre RG-07 : vague du jour, assignée au bénévole, campagne active de la commune, non exclue. */
@@ -64,6 +65,8 @@ export const lectureBenevoleDrizzle: LectureBenevole = {
         rangCercleEssaye: ciblesCampagne.rangCercleEssaye,
         verrouPar: ciblesCampagne.verrouPar,
         verrouAt: ciblesCampagne.verrouAt,
+        campagneId: campagnes.id,
+        alerteId: campagnes.alerteId,
         typeAppel: campagnes.type,
         script: campagnes.script,
         civilite: beneficiaires.civilite,
@@ -104,6 +107,8 @@ export const lectureBenevoleDrizzle: LectureBenevole = {
       )
       .orderBy(asc(liensCercle.rangAppel));
 
+    const notesAlerte = await notesDeLAlerte(communeId, l.beneficiaireId, l.alerteId, l.campagneId);
+
     const telephones = [
       l.telephoneMobile ? { libelle: "Portable", numero: l.telephoneMobile, prefere: l.preferenceContact === "mobile" } : null,
       l.telephoneFixe ? { libelle: "Fixe", numero: l.telephoneFixe, prefere: l.preferenceContact !== "mobile" } : null,
@@ -134,6 +139,7 @@ export const lectureBenevoleDrizzle: LectureBenevole = {
         prenom: p.prenom ?? p.nom,
         telephone: (p.telephone ?? p.telephone2)!,
       })),
+      notesAlerte,
     };
   },
 
@@ -144,5 +150,14 @@ export const lectureBenevoleDrizzle: LectureBenevole = {
       .where(eq(utilisateurs.id, benevoleId))
       .limit(1);
     return u?.at ?? null;
+  },
+
+  async nbPersonnesConfiees(communeId, benevoleId) {
+    const [{ n }] = await db
+      .select({ n: count() })
+      .from(assignations)
+      .innerJoin(beneficiaires, eq(beneficiaires.id, assignations.beneficiaireId))
+      .where(and(eq(assignations.utilisateurId, benevoleId), eq(beneficiaires.communeId, communeId), eq(beneficiaires.statut, "active")));
+    return n;
   },
 };

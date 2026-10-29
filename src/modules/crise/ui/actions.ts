@@ -154,7 +154,7 @@ export async function ouvrirAppelAction(cibleId: string) {
   return executer(async () => {
     const ctx = await obtenirContexte();
     const r = await casDUsageCrise.ouvrirFicheAppel(ctx, { cibleId: id.parse(cibleId) });
-    return { verrou: r.verrou, fiche: r.fiche };
+    return { verrou: r.verrou, fiche: r.fiche, notesAlerte: r.notesAlerte };
   });
 }
 

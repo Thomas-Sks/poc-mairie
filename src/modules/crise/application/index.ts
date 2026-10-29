@@ -28,5 +28,5 @@ export {
   type EntreeCampagne,
   type TableauDeBord,
 } from "./campagnes";
-export type { SelecteurBeneficiaires, DepotCrise, FicheAppel } from "./ports";
+export type { SelecteurBeneficiaires, DepotCrise, FicheAppel, NoteAlerte } from "./ports";
 export { RESULTATS_APPEL, RESULTAT_APPEL_LIBELLES, type ResultatAppel } from "../domain/resultat-appel";
