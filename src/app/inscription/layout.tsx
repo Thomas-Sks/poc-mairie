@@ -3,6 +3,9 @@ import { communePublique } from "@/modules/inscriptions/infrastructure";
 
 export const metadata: Metadata = { title: "Inscription au registre des personnes vulnérables" };
 
+/** Les coordonnées de la commune viennent de la base : rendu à la demande, jamais au build. */
+export const dynamic = "force-dynamic";
+
 /** Mise en page publique (sans coque CCAS ni sélecteur d'utilisateur), mobile d'abord, gros caractères. */
 export default async function LayoutInscription({ children }: LayoutProps<"/inscription">) {
   const commune = await communePublique();
