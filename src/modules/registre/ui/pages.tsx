@@ -3,7 +3,6 @@
  */
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Contexte } from "@/shared/application/contexte";
 import { formaterDate } from "@/shared/domain/dates";
@@ -33,13 +32,6 @@ export async function PageBeneficiaires({ question }: { question?: string } = {}
       <EnTetePage
         titre="Bénéficiaires"
         description="Posez votre question : le tableau et la carte n'affichent que les personnes concernées."
-        actions={
-          droits.ecrire && (
-            <Button render={<Link href="/beneficiaires/nouveau" />} nativeButton={false}>
-              <Plus aria-hidden /> Nouvelle fiche
-            </Button>
-          )
-        }
       />
       <TableauBeneficiaires
         referentiels={referentiels}

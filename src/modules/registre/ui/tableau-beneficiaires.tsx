@@ -483,13 +483,15 @@ export function TableauBeneficiaires({
   const fin = Math.min(total, (page + 1) * taillePage);
   const nbPages = Math.max(1, Math.ceil(total / taillePage));
   const pageEntiereSelectionnee = lignes.length > 0 && lignes.every((l) => selection[l.id]);
+  // Enregistrer ou exporter tout le registre n'a pas de sens : ces boutons n'apparaissent qu'après une recherche ou un filtre.
+  const rechercheCiblee = !estFiltreVide(filtre);
 
   return (
     <div className="flex flex-col gap-4">
       {/* Barre d'outils */}
       <div className="flex flex-wrap items-center gap-2">
         <form
-          className="flex min-w-0 flex-1 basis-80 gap-2"
+          className="flex min-w-0 flex-1 basis-80"
           onSubmit={(e) => {
             e.preventDefault();
             poser(question);
@@ -511,9 +513,6 @@ export function TableauBeneficiaires({
               onChange={(e) => setQuestion(e.target.value)}
             />
           </div>
-          <Button type="submit" className="h-12" disabled={enQuestion}>
-            Demander
-          </Button>
         </form>
         <Button
           variant="outline"
@@ -627,12 +626,12 @@ export function TableauBeneficiaires({
                       <ChoixColonnes colonnes={colonnes} disponibles={disponibles} onChange={setColonnes} />
                     </div>
                   )}
-                  {droits.ecrire && (
+                  {droits.ecrire && rechercheCiblee && (
                     <Button variant="outline" disabled={total === 0} onClick={() => setFenetre("liste")}>
                       Enregistrer la liste
                     </Button>
                   )}
-                  {droits.exporter && (
+                  {droits.exporter && (rechercheCiblee || listeId) && (
                     <Button variant="ghost" disabled={total === 0} onClick={() => setFenetre("export")}>
                       Exporter
                     </Button>
