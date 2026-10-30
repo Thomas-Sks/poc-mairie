@@ -17,8 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { MOTIFS_ARCHIVAGE, MOTIF_ARCHIVAGE_LIBELLES, ROLE_LIBELLES, type MotifArchivage } from "@/shared/domain/vocabulaire";
 import type { Filtre } from "../domain/filtre";
-import { colonnesAutorisees, COLONNES, DEFINITIONS_COLONNES, contientDonneesSante, type Colonne, type ConfigVue, type StatutGroupe } from "../domain/tableau";
-import { actionAjouterTag, actionAssigner, actionChangerStatut, actionCreerListe, actionEnregistrerVue, actionExporterCsv } from "./actions";
+import { colonnesAutorisees, COLONNES, DEFINITIONS_COLONNES, contientDonneesSante, type Colonne, type StatutGroupe } from "../domain/tableau";
+import { actionAjouterTag, actionAssigner, actionChangerStatut, actionCreerListe, actionExporterCsv } from "./actions";
 import { classeSelect } from "./panneau-filtres";
 import { nomMembre, type Membre } from "./types";
 
@@ -442,46 +442,3 @@ export function FenetreListe({
     </Fenetre>
   );
 }
-
-// ─── Enregistrer une vue (E8-US10) ────────────────────────────────────────────
-
-export function FenetreVue({ config, ouvert, fermer, onEnregistree }: { config: ConfigVue; ouvert: boolean; fermer: () => void; onEnregistree: () => void }) {
-  const id = useId();
-  const [nom, setNom] = useState("");
-  const [enCours, demarrer] = useTransition();
-  const valider = () =>
-    demarrer(async () => {
-      const r = await actionEnregistrerVue({ nom, config });
-      if (!r.ok) return void toast.error(r.erreur);
-      toast.success(`Vue « ${nom.trim()} » enregistrée`);
-      setNom("");
-      onEnregistree();
-      fermer();
-    });
-  return (
-    <Fenetre
-      ouvert={ouvert}
-      fermer={fermer}
-      titre="Enregistrer la vue"
-      description="Colonnes, filtres et tri actuels, retrouvables en un clic. Seul vous voyez vos vues."
-      pied={
-        <>
-          <Button variant="outline" onClick={fermer}>
-            Annuler
-          </Button>
-          <Button disabled={enCours || !nom.trim()} onClick={valider}>
-            Enregistrer la vue
-          </Button>
-        </>
-      }
-    >
-      <div className="flex flex-col gap-1">
-        <label htmlFor={id} className="font-medium">
-          Nom de la vue
-        </label>
-        <Input id={id} value={nom} maxLength={80} onChange={(e) => setNom(e.target.value)} placeholder="Ex. Mes P1 sans contact récent" />
-      </div>
-    </Fenetre>
-  );
-}
-

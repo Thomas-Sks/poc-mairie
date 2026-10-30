@@ -7,6 +7,8 @@ import { Bandeau } from "@/shared/ui/elements";
 import { formaterDateLongue, aujourdhui } from "@/shared/domain/dates";
 import { formaterNom, formaterPrenom } from "@/shared/domain/normalisation";
 import {
+  CAISSE_RETRAITE_LIBELLES,
+  CAISSES_RETRAITE,
   DEPLACEMENTS,
   INDISPONIBILITE_LIBELLES,
   MODE_DE_VIE_LIBELLES,
@@ -20,7 +22,7 @@ import {
   TYPES_INDISPONIBILITE,
   type TypeIndisponibilite,
 } from "@/shared/domain/vocabulaire";
-import { TYPES_INTERVENANT_FORMULAIRE } from "../../domain/formulaire";
+import { AIDE_FORMULAIRE_LIBELLES, AIDES_FORMULAIRE, TYPES_INTERVENANT_FORMULAIRE } from "../../domain/formulaire";
 import { contactVide, intervenantVide, type Erreurs, type Saisie } from "../../domain/etapes";
 import { CaseACocher, ChampListe, ChampTexte, ChoixUnique, idChamp, MessageErreur, OuiNon } from "./champs";
 import { ChampAdresse } from "./champ-adresse";
@@ -254,6 +256,28 @@ export function EtapeSituation({ saisie, maj, erreurs }: ProprietesEtape) {
         valeur={saisie.categorie}
         onChange={(v) => maj((s) => void (s.categorie = v))}
         options={CATEGORIES.map((c) => ({ valeur: c, libelle: c === "senior" ? "Personne de 60 ans et plus" : "Personne en situation de handicap de moins de 60 ans" }))}
+      />
+      <fieldset className="flex flex-col gap-1">
+        <legend className="mb-1 text-lg font-semibold">
+          La personne reçoit-elle une de ces aides ? <span className="font-normal text-muted-foreground">(facultatif)</span>
+        </legend>
+        {AIDES_FORMULAIRE.map((a) => (
+          <CaseACocher
+            key={a}
+            cle={`aide-${a}`}
+            label={AIDE_FORMULAIRE_LIBELLES[a]}
+            coche={saisie.aides.includes(a)}
+            onChange={(coche) => maj((s) => void (s.aides = coche ? [...s.aides, a] : s.aides.filter((x) => x !== a)))}
+          />
+        ))}
+      </fieldset>
+      <ChoixUnique
+        cle="caisseRetraite"
+        legende="Caisse de retraite principale (facultatif)"
+        erreur={erreurs.caisseRetraite}
+        valeur={saisie.caisseRetraite}
+        onChange={(v) => maj((s) => void (s.caisseRetraite = v))}
+        options={CAISSES_RETRAITE.map((c) => ({ valeur: c, libelle: CAISSE_RETRAITE_LIBELLES[c] }))}
       />
       {saisie.personnes.slice(0, saisie.nombrePersonnes).map((p, i) => {
         const nom = nomPersonne(saisie, i);

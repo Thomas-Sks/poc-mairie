@@ -35,7 +35,6 @@ export type FicheComplete = {
   niveauForce: NiveauPriorite | null;
   niveauForceJustification: string | null;
   dateInscription: DateISO;
-  dateDerniereVerification: DateISO | null;
   retourHospitalisationLe: DateISO | null;
   iaActivee: boolean;
   beneficiaire: SaisieBeneficiaire;

@@ -62,6 +62,28 @@ export const PROTECTION_LIBELLES: Record<Protection, string> = {
   sauvegarde: "Sauvegarde de justice",
 };
 
+/** Décret n° 2026-590 : caisses de retraite qui transmettent les bénéficiaires de leurs aides à l'autonomie. */
+export const CAISSES_RETRAITE = ["carsat", "msa", "cnracl", "ircantec", "ssi", "autre"] as const;
+export type CaisseRetraite = (typeof CAISSES_RETRAITE)[number];
+export const CAISSE_RETRAITE_LIBELLES: Record<CaisseRetraite, string> = {
+  carsat: "Carsat (régime général)",
+  msa: "MSA (agricole)",
+  cnracl: "CNRACL (fonction publique)",
+  ircantec: "Ircantec",
+  ssi: "Sécurité sociale des indépendants",
+  autre: "Autre caisse",
+};
+
+/** Décret n° 2026-590 : la fiche vient d'une demande ou d'une transmission obligatoire. */
+export const ORIGINES_INSCRIPTION = ["demande", "departement", "caisse_retraite", "ccas"] as const;
+export type OrigineInscription = (typeof ORIGINES_INSCRIPTION)[number];
+export const ORIGINE_INSCRIPTION_LIBELLES: Record<OrigineInscription, string> = {
+  demande: "Demande de la personne ou d'un proche",
+  departement: "Liste du Département (APA, PCH)",
+  caisse_retraite: "Liste de la caisse de retraite",
+  ccas: "Repérée par le CCAS",
+};
+
 export const DEPLACEMENTS = ["seul", "canne", "deambulateur", "fauteuil", "immobilise"] as const;
 export type Deplacement = (typeof DEPLACEMENTS)[number];
 export const DEPLACEMENT_LIBELLES: Record<Deplacement, string> = {

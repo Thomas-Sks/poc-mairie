@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import type { Contexte } from "@/shared/application/contexte";
-import { RELANCE_PAR_DEFAUT } from "@/shared/domain/campagne";
 import { AccesRefuse } from "@/shared/domain/permissions";
 import { GRILLE_PAR_DEFAUT } from "@/shared/domain/priorite";
 import type { Role } from "@/shared/domain/vocabulaire";
@@ -20,10 +19,10 @@ const fiche = (id: string, modeDeVie: "seul" | "couple", niveauForce: FichePourS
   niveauPriorite: "P3",
   niveauForce,
   faits: {
-    beneficiaire: { dateNaissance: "1936-01-01", modeDeVie, deplacement: "seul", protection: "non", troublesCognitifs: false, pasDeTelephone: false, retourHospitalisationLe: null },
+    beneficiaire: { dateNaissance: "1936-01-01", modeDeVie, deplacement: "seul", protection: "non", troublesCognitifs: false, pasDeTelephone: false, retourHospitalisationLe: null, gir: null, aideCaisseRetraite: false },
     foyer: { sousLesToits: false, pieceFraiche: true, etage: 2, typeLogement: "appartement" },
     cercle: [{ relation: "enfant", possedeCles: true, ville: "Lomme", telephone: "06" }],
-    prisesEnCharge: [{ type: "aide_domicile", possedeCles: false, dateFin: null }],
+    prisesEnCharge: [{ type: "aide_domicile", possedeCles: false, dateFin: null, gir: null }],
   },
 });
 
@@ -31,21 +30,12 @@ function depot(fiches: FichePourScore[], grille = GRILLE_PAR_DEFAUT) {
   const enregistres: { id: string; score: number; niveauPriorite: string }[] = [];
   const parametres: ParametresCommune = {
     grilleScore: grille,
-    relance: RELANCE_PAR_DEFAUT,
-    anniversaireJoursAvant: 3,
-    verificationMois: 12,
-    rgpd: { responsable: "", conservation: "", dpo: "", droits: "" },
   };
   const repo: ParametresRepository = {
     lire: async () => parametres,
     enregistrer: async () => {},
     fichesActivesPourScore: async () => fiches,
     enregistrerScores: async (_c, s) => void enregistres.push(...s),
-    equipe: async () => [],
-    emailUtilise: async () => false,
-    creerMembre: async () => {
-      throw new Error("non utilisé");
-    },
   };
   return { repo, enregistres };
 }

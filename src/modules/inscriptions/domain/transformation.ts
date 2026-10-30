@@ -9,6 +9,7 @@ import type { DateISO } from "@/shared/domain/dates";
 import { calculerScore, GRILLE_PAR_DEFAUT, type GrilleScore, type ResultatScore } from "@/shared/domain/priorite";
 import { formaterNom, formaterPrenom } from "@/shared/domain/normalisation";
 import type {
+  CaisseRetraite,
   Categorie,
   Civilite,
   Deplacement,
@@ -56,6 +57,9 @@ export type FicheACreer = {
   email: string | null;
   modeDeVie: ModeDeVie;
   categorie: Categorie;
+  caisseRetraite: CaisseRetraite | null;
+  aideCaisseRetraite: boolean;
+  origineInscription: "demande";
   deplacement: Deplacement;
   protection: Protection;
   mandataireStructure: string | null;
@@ -167,6 +171,13 @@ export function transformerInscription(f: FormulaireInscription, p: ParametresTr
         : null,
   }));
 
+  // Décret n° 2026-590 : l'APA et la PCH déclarées deviennent des prises en charge (source du score).
+  for (const aide of f.aides) {
+    if (aide === "apa" || aide === "pch")
+      prisesEnCharge.push({ type: aide, intervenantNom: "Département du Nord", telephone: null, possedeCles: false, creneau: null });
+  }
+  const aideCaisseRetraite = f.aides.includes("aide_caisse");
+
   const indisponibilites: IndisponibiliteACreer[] = f.absences.map((x) => ({
     type: x.type,
     debut: x.debut,
@@ -191,10 +202,12 @@ export function transformerInscription(f: FormulaireInscription, p: ParametresTr
           // Pas de numéro pour la personne ni pour le foyer : une visite sera nécessaire.
           pasDeTelephone: telephonesFoyer.length === 0,
           retourHospitalisationLe: null,
+          gir: null,
+          aideCaisseRetraite,
         },
         foyer: { sousLesToits: foyer.sousLesToits, pieceFraiche: foyer.pieceFraiche, etage: foyer.etage, typeLogement: foyer.typeLogement },
         cercle: contacts.map((c) => ({ relation: c.relation, possedeCles: c.possedeCles, ville: c.ville, telephone: c.telephone })),
-        prisesEnCharge: prisesEnCharge.map((x) => ({ type: x.type, possedeCles: x.possedeCles, dateFin: null })),
+        prisesEnCharge: prisesEnCharge.map((x) => ({ type: x.type, possedeCles: x.possedeCles, dateFin: null, gir: null })),
         aujourdhui: p.aujourdhui,
       }),
       grille,
@@ -211,6 +224,9 @@ export function transformerInscription(f: FormulaireInscription, p: ParametresTr
       email: ouNull(pers.email),
       modeDeVie: f.modeDeVie,
       categorie: f.categorie,
+      caisseRetraite: f.caisseRetraite ?? null,
+      aideCaisseRetraite,
+      origineInscription: "demande",
       deplacement: pers.deplacement,
       protection: pers.protection,
       mandataireStructure: pers.protection !== "non" ? ouNull(pers.protectionStructure) : null,

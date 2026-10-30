@@ -13,12 +13,12 @@ export default async function NouvelleAlerte({ searchParams }: PageProps<"/alert
   return (
     <Page>
       <EnTetePage
-        retour={<LienRetour href="/alertes">Alertes et campagnes</LienRetour>}
+        retour={<LienRetour href="/alertes">Alertes</LienRetour>}
         titre="Déclencher une alerte"
         description={
           liste
-            ? "Après le déclenchement, la campagne d'appels portera sur les personnes sélectionnées dans le tableau."
-            : "Après le déclenchement, vous choisirez les personnes à appeler et l'équipe mobilisée."
+            ? "Étape 1 sur 2. Ensuite, les personnes sélectionnées dans le tableau seront appelées."
+            : "Étape 1 sur 2. Ensuite, vous choisirez qui appeler et qui passe les appels."
         }
       />
       <FormulaireAlerte aujourdhui={aujourdhui(ctx.maintenant)} listeId={typeof liste === "string" ? liste : undefined} />

@@ -153,6 +153,8 @@ export type FicheAppel = {
   cercle: ContactCercle[];
 };
 
+export type NoteAlerte = { auteur: string; at: Date; texte: string };
+
 export type MiseAJourCible = Partial<{
   statut: StatutCible;
   nbTentatives: number;
@@ -266,6 +268,8 @@ export interface DepotCrise {
   // Cibles et appels
   obtenirCible(communeId: string, cibleId: string): Promise<CibleAppel | null>;
   obtenirFicheAppel(communeId: string, beneficiaireId: string): Promise<FicheAppel | null>;
+  /** « Fiche canicule » : comptes rendus écrits pendant l'alerte de la campagne (jamais l'historique de l'année). */
+  notesAlerte(communeId: string, beneficiaireId: string, campagneId: string): Promise<NoteAlerte[]>;
   mettreAJourCible(cibleId: string, maj: MiseAJourCible): Promise<void>;
   /** Pose le verrou si libre, expiré ou déjà détenu par l'utilisateur. Renvoie le détenteur effectif. */
   poserVerrou(cibleId: string, utilisateurId: string, maintenant: Date, expireAvant: Date): Promise<{ obtenu: boolean; detenteur: string | null }>;

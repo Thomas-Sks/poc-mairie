@@ -3,6 +3,14 @@
 # POC Registre des personnes vulnérables (CCAS)
 
 Application de suivi des personnes vulnérables pour les CCAS, qui devient l'outil de pilotage en cas d'alerte (canicule, grand froid, inondation).
+Public d'environ 60 ans : peu de boutons, prise en main en 2-3 minutes. Mieux vaut moins de fonctionnalités que des écrans chargés.
+
+Menu CCAS : Bénéficiaires (accueil) · Listes · Alertes · Bénévoles · Inscriptions (pastille rouge = demandes à valider) · Paramètres.
+- **Assistant** (`modules/assistant`, cœur de l'app), intégré en haut de Bénéficiaires : une question en français filtre le tableau et la carte (filtre `ids` + `question`), un chiffre s'affiche au-dessus, un nom devient une recherche. Pas de page à part ni de vues enregistrées. Déterministe : l'IA (Claude, `ANTHROPIC_API_KEY` facultative) ne fait que du function calling sur le moteur de `modules/statistiques` ; chaque interprétation est figée dans `interpretations_assistant` et les réponses sont rédigées par gabarits. Sans clé, l'analyseur de mots-clés répond seul.
+- **Bénévoles** (`modules/benevole/ui/gestion`) : on ajoute un bénévole et on lui confie des personnes (table `assignations`) ; pendant une alerte, la vague du jour les lui assigne. Il voit la fiche réduite et les « notes de cette alerte », jamais l'historique de l'année.
+- **Critères de priorité** (Paramètres) : grille RG-01 + APA/GIR, PCH, aide de la caisse de retraite (décret n° 2026-590 du 3 juillet 2026).
+- Retirés : Mes tâches du jour, import Excel, rubrique Statistiques (explorateur, dashboards), vues enregistrées du tableau, « fiches à revérifier », réglages de relances et textes RGPD (valeurs figées).
+- Tableau des bénéficiaires : défilement dans son propre cadre, en-têtes et colonne « Nom » figés, boutons ◀ ▶ quand des colonnes dépassent ; liste simple sur mobile.
 Specs fonctionnelles : `docs/SPECS.md`, à lire pour toute fonctionnalité (les identifiants `E8-US3`, `RG-05`… y renvoient).
 Direction artistique : `docs/da-mairie.html`. Toute l'interface est en **français**.
 
@@ -22,7 +30,7 @@ Utilisateurs de démo (sélecteur en haut d'écran, cookie `poc_utilisateur`) : 
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack, React 19), TypeScript strict, Tailwind CSS 4, shadcn/ui (variante **Base UI** : on compose avec la prop `render`, pas `asChild`), Drizzle ORM + PostgreSQL, Zod 4, TanStack Table 8, TanStack Query 5 (polling temps réel), Leaflet + react-leaflet, Recharts, react-grid-layout 1.5, SheetJS (`xlsx`), Vitest, Playwright.
+Next.js 16 (App Router, Turbopack, React 19), TypeScript strict, Tailwind CSS 4, shadcn/ui (variante **Base UI** : on compose avec la prop `render`, pas `asChild`), Drizzle ORM + PostgreSQL, Zod 4, TanStack Table 8, TanStack Query 5 (polling temps réel), Leaflet + react-leaflet, SDK Anthropic (`@anthropic-ai/sdk`, assistant), Vitest, Playwright.
 **Icônes : uniquement `lucide-react`.**
 
 ## Architecture hexagonale

@@ -9,7 +9,7 @@ import { aujourdhui } from "@/shared/domain/dates";
 import { AccesRefuse, peut } from "@/shared/domain/permissions";
 import type { Besoin, StatutCible } from "@/shared/domain/vocabulaire";
 import { deciderResultatAppel, objetRappelBesoin, RESULTAT_APPEL_LIBELLES, type DecisionAppel, type ResultatAppel } from "../domain/resultat-appel";
-import type { CibleAppel, DepotCrise, FicheAppel, Membre, Notifieur } from "./ports";
+import type { CibleAppel, DepotCrise, FicheAppel, Membre, NoteAlerte, Notifieur } from "./ports";
 
 export class VerrouPris extends Error {
   constructor(public readonly detenteur: Pick<Membre, "id" | "prenom" | "nom"> | null) {
@@ -60,12 +60,15 @@ export async function ouvrirFicheAppel(
   deps: { depot: DepotCrise },
   ctx: Contexte,
   entree: { cibleId: string },
-): Promise<{ verrou: ResultatVerrou; fiche: FicheAppel; cible: CibleAppel }> {
+): Promise<{ verrou: ResultatVerrou; fiche: FicheAppel; notesAlerte: NoteAlerte[]; cible: CibleAppel }> {
   const verrou = await prendreVerrou(deps, ctx, entree);
   const cible = await chargerCible(deps.depot, ctx, entree.cibleId);
-  const fiche = await deps.depot.obtenirFicheAppel(ctx.commune.id, cible.beneficiaireId);
+  const [fiche, notesAlerte] = await Promise.all([
+    deps.depot.obtenirFicheAppel(ctx.commune.id, cible.beneficiaireId),
+    deps.depot.notesAlerte(ctx.commune.id, cible.beneficiaireId, cible.campagneId),
+  ]);
   if (!fiche) throw new Error("Fiche introuvable.");
-  return { verrou, fiche, cible };
+  return { verrou, fiche, notesAlerte, cible };
 }
 
 export type EntreeResultatAppel = {

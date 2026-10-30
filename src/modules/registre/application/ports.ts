@@ -4,7 +4,7 @@
 import type { DateISO } from "@/shared/domain/dates";
 import type { NiveauPriorite, Role, StatutFiche } from "@/shared/domain/vocabulaire";
 import type { Filtre } from "../domain/filtre";
-import type { ConfigVue, LigneBeneficiaire, ResultatAppelRapide, Tri } from "../domain/tableau";
+import type { LigneBeneficiaire, ResultatAppelRapide, Tri } from "../domain/tableau";
 
 export type PointCarte = { id: string; nom: string; lat: number; lon: number; niveau: NiveauPriorite; adresse: string };
 
@@ -77,14 +77,6 @@ export interface ListesRepository {
   creer(communeId: string, liste: Omit<Liste, "id" | "createdAt">): Promise<string>;
   renommer(communeId: string, id: string, nom: string): Promise<void>;
   supprimer(communeId: string, id: string): Promise<void>;
-}
-
-export type VueSauvegardee = { id: string; nom: string; config: ConfigVue };
-
-export interface VuesRepository {
-  lister(utilisateurId: string): Promise<VueSauvegardee[]>;
-  creer(utilisateurId: string, nom: string, config: ConfigVue): Promise<string>;
-  supprimer(utilisateurId: string, id: string): Promise<void>;
 }
 
 export interface PresencesRepository {

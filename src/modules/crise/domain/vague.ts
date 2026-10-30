@@ -92,6 +92,22 @@ export function genererVague(
 }
 
 /** E9-US3 / E9-US4 : une vague est-elle due ce jour-là ? */
+/**
+ * Appelant habituel de chaque personne : le bénévole à qui elle est confiée (écran « Bénévoles »).
+ * Si plusieurs bénévoles l'ont en charge, le premier à qui elle a été confiée l'emporte.
+ */
+export function appelantsHabituels(confiees: { beneficiaireId: string; benevoleId: string; confieeLe: Date }[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const c of [...confiees].sort((a, b) => a.confieeLe.getTime() - b.confieeLe.getTime())) {
+    if (!m.has(c.beneficiaireId)) m.set(c.beneficiaireId, c.benevoleId);
+  }
+  return m;
+}
+
+/** Une cible n'hérite de son appelant habituel que si un humain doit l'appeler. */
+export const appelantInitial = (g: Pick<CibleGeneree, "beneficiaireId" | "canal" | "exclue">, habituels: Map<string, string>) =>
+  !g.exclue && g.canal === "humain" ? (habituels.get(g.beneficiaireId) ?? null) : null;
+
 export function vagueDueLe(
   campagne: { frequence: Frequence; frequenceJours: number | null; dateDebut: DateISO; dateFin: DateISO | null; statut: "active" | "cloturee" },
   jour: DateISO,

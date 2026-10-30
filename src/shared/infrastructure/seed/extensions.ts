@@ -1,13 +1,13 @@
 /**
  * Points d'extension du seed : chaque module peut ajouter ses propres données de démo
- * (listes sauvegardées, dashboards prédéfinis…) sans toucher au seed principal.
+ * (listes sauvegardées, assignations…) sans toucher au seed principal.
  * Ajouter une fonction à EXTENSIONS_SEED ; elle est appelée après le seed principal.
  */
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as s from "../db/schema";
-import { seedTaches } from "@/modules/taches/infrastructure/seed-taches";
+import { seedRappels } from "@/modules/beneficiaires/infrastructure/seed-rappels";
 import { seedRegistre } from "@/modules/registre/infrastructure/seed";
-import { seedStatistiques } from "@/modules/statistiques/infrastructure/seed";
+import { seedBenevoles } from "@/modules/benevole/infrastructure/seed-benevoles";
 
 export type ContexteSeed = {
   communeId: string;
@@ -20,9 +20,9 @@ export type ContexteSeed = {
 export type ExtensionSeed = (db: PostgresJsDatabase<typeof s>, ctx: ContexteSeed) => Promise<void>;
 
 export const EXTENSIONS_SEED: ExtensionSeed[] = [
-  seedTaches,
-  seedStatistiques,
+  seedRappels,
   seedRegistre,
+  seedBenevoles,
   // Module bénévole : campagne active de développement, désactivée par défaut (SEED_CAMPAGNE_TEST=1 pour l'activer).
   async (db, ctx) => {
     if (process.env.SEED_CAMPAGNE_TEST !== "1") return;

@@ -8,11 +8,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { formaterDateHeure } from "@/shared/domain/dates";
 import { BESOIN_LIBELLES, STATUT_CIBLE_LIBELLES, type Besoin } from "@/shared/domain/vocabulaire";
 import { Libelle, Pastille } from "@/shared/ui/elements";
 import { RESULTAT_APPEL_LIBELLES, type ResultatAppel } from "../domain/resultat-appel";
 import { tonStatut } from "../domain/tableau-de-bord";
-import type { FicheAppel, ResultatVerrou } from "../application";
+import type { FicheAppel, NoteAlerte, ResultatVerrou } from "../application";
 import { enregistrerResultatAction, libererVerrouAction, ouvrirAppelAction } from "./actions";
 import type { CibleVue } from "./tableau-de-bord";
 import { nomPersonne } from "./libelles";
@@ -26,7 +27,7 @@ const BESOINS_RAPIDES: Besoin[] = ["eau", "courses", "medicaments", "visite", "c
 
 const tel = (n: string) => `tel:${n.replace(/\s/g, "")}`;
 
-type Ouverture = { verrou: ResultatVerrou; fiche: FicheAppel };
+type Ouverture = { verrou: ResultatVerrou; fiche: FicheAppel; notesAlerte: NoteAlerte[] };
 
 /** Traitement d'une cible depuis le tableau de bord CCAS : verrou, résultat, besoins, cercle. */
 export function PanneauAppel({ cibleId, cible, onFermer, onEnregistre }: { cibleId: string | null; cible: CibleVue | null; onFermer: () => void; onEnregistre: () => void }) {
@@ -45,7 +46,7 @@ export function PanneauAppel({ cibleId, cible, onFermer, onEnregistre }: { cible
       if (annule) return;
       if (!r.ok) setErreur(r.erreur);
       else {
-        setOuverture({ verrou: r.verrou, fiche: r.fiche });
+        setOuverture({ verrou: r.verrou, fiche: r.fiche, notesAlerte: r.notesAlerte });
         setContactId(r.fiche.cercle[0]?.id ?? "");
       }
       onEnregistre();
@@ -158,6 +159,22 @@ export function PanneauAppel({ cibleId, cible, onFermer, onEnregistre }: { cible
                 {!fiche.telephoneFixe && !fiche.telephoneMobile && <span className="text-muted-foreground">Pas de téléphone : visite nécessaire.</span>}
               </div>
             </div>
+
+            {ouverture.notesAlerte.length > 0 && (
+              <div className="flex flex-col gap-2 p-5">
+                <Libelle>Notes de cette alerte</Libelle>
+                <ul className="flex flex-col gap-2">
+                  {ouverture.notesAlerte.map((n, i) => (
+                    <li key={i} className="flex flex-col">
+                      <span className="text-sm text-muted-foreground">
+                        {n.auteur}, {formaterDateHeure(n.at)}
+                      </span>
+                      <span>{n.texte}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <fieldset className="flex flex-col gap-4 p-5">
               <legend className="sr-only">Résultat de l&apos;appel</legend>

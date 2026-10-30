@@ -4,11 +4,13 @@
  */
 import type { DateISO } from "@/shared/domain/dates";
 import type {
+  CaisseRetraite,
   Categorie,
   Civilite,
   Deplacement,
   ModeDeVie,
   NiveauPriorite,
+  OrigineInscription,
   PreferenceContact,
   Protection,
   Sexe,
@@ -34,6 +36,9 @@ export type SaisieBeneficiaire = {
   protection: Protection;
   mandataireStructure: string | null;
   mandataireTelephone: string | null;
+  caisseRetraite: CaisseRetraite | null;
+  aideCaisseRetraite: boolean;
+  origineInscription: OrigineInscription;
   habitudes: string | null;
   centresInteret: string | null;
   tags: string[];

@@ -14,7 +14,7 @@ import {
   tags,
   utilisateurs,
 } from "@/shared/infrastructure/db/schema";
-import { GRILLE_PAR_DEFAUT } from "@/shared/domain/priorite";
+import { completerGrille } from "@/shared/domain/priorite";
 import type { Changement, SaisieBeneficiaire, SaisieFoyer, SaisieSante } from "../domain/fiche";
 import type { FicheComplete, FicheRepository } from "../application/ports";
 
@@ -41,6 +41,9 @@ function versBeneficiaire(b: LigneBeneficiaire): SaisieBeneficiaire {
     protection: b.protection,
     mandataireStructure: b.mandataireStructure,
     mandataireTelephone: b.mandataireTelephone,
+    caisseRetraite: b.caisseRetraite,
+    aideCaisseRetraite: b.aideCaisseRetraite,
+    origineInscription: b.origineInscription,
     habitudes: b.habitudes,
     centresInteret: b.centresInteret,
     tags: b.tags,
@@ -116,7 +119,6 @@ export const ficheRepositoryDrizzle: FicheRepository = {
       niveauForce: b.niveauForce,
       niveauForceJustification: b.niveauForceJustification,
       dateInscription: b.dateInscription,
-      dateDerniereVerification: b.dateDerniereVerification,
       retourHospitalisationLe: b.retourHospitalisationLe,
       iaActivee: b.iaActivee,
       beneficiaire: versBeneficiaire(b),
@@ -144,7 +146,6 @@ export const ficheRepositoryDrizzle: FicheRepository = {
           score: fiche.score,
           niveauPriorite: fiche.niveauPriorite,
           dateInscription: fiche.dateInscription,
-          dateDerniereVerification: fiche.dateInscription,
         })
         .returning({ id: beneficiaires.id });
       return b.id;
@@ -211,7 +212,7 @@ export const ficheRepositoryDrizzle: FicheRepository = {
         .innerJoin(contacts, eq(contacts.id, liensCercle.contactId))
         .where(eq(liensCercle.beneficiaireId, id)),
       db
-        .select({ type: prisesEnCharge.type, possedeCles: prisesEnCharge.possedeCles, dateFin: prisesEnCharge.dateFin })
+        .select({ type: prisesEnCharge.type, possedeCles: prisesEnCharge.possedeCles, dateFin: prisesEnCharge.dateFin, gir: prisesEnCharge.gir })
         .from(prisesEnCharge)
         .where(eq(prisesEnCharge.beneficiaireId, id)),
     ]);
@@ -225,6 +226,8 @@ export const ficheRepositoryDrizzle: FicheRepository = {
         troublesCognitifs: b.troublesCognitifs,
         pasDeTelephone: b.pasDeTelephone,
         retourHospitalisationLe: b.retourHospitalisationLe,
+        gir: b.gir,
+        aideCaisseRetraite: b.aideCaisseRetraite,
       },
       foyer: { sousLesToits: f.sousLesToits, pieceFraiche: f.pieceFraiche, etage: f.etage, typeLogement: f.typeLogement },
       cercle,
@@ -241,7 +244,7 @@ export const ficheRepositoryDrizzle: FicheRepository = {
 
   async grilleScore(communeId) {
     const commune = await db.query.communes.findFirst({ where: eq(communes.id, communeId) });
-    return commune?.parametres.grilleScore ?? GRILLE_PAR_DEFAUT;
+    return completerGrille(commune?.parametres.grilleScore);
   },
 
   async archiver(communeId, id, motif, commentaire) {

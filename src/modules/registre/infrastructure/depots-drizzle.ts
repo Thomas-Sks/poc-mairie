@@ -15,12 +15,11 @@ import {
   quartiers,
   tags,
   utilisateurs,
-  vuesSauvegardees,
 } from "@/shared/infrastructure/db/schema";
 import { calculerAge, type DateISO } from "@/shared/domain/dates";
 import type { MotifArchivage } from "@/shared/domain/vocabulaire";
 import { lireFiltre, versJson } from "../domain/filtre";
-import { lireConfigVue, type LigneBeneficiaire } from "../domain/tableau";
+import type { LigneBeneficiaire } from "../domain/tableau";
 import type {
   ActionsRepository,
   ListesRepository,
@@ -28,7 +27,6 @@ import type {
   PresencesRepository,
   ReferentielsRepository,
   RegistreRepository,
-  VuesRepository,
 } from "../application/ports";
 import { apaEnCours, conditionsCommune, dernierContactTexte, indisponibleLe, niveauEffectif, ordrePriorite, ordreTri, SANS_ACCENTS, sansAccents } from "./sql-filtre";
 
@@ -339,28 +337,6 @@ export const listesDrizzle: ListesRepository = {
   },
 };
 
-export const vuesDrizzle: VuesRepository = {
-  async lister(utilisateurId) {
-    const rows = await db.select().from(vuesSauvegardees).where(eq(vuesSauvegardees.utilisateurId, utilisateurId)).orderBy(asc(vuesSauvegardees.nom));
-    return rows.flatMap((r) => {
-      try {
-        return [{ id: r.id, nom: r.nom, config: lireConfigVue(r.config) }];
-      } catch {
-        return []; // vue devenue invalide (colonne supprimée…) : ignorée
-      }
-    });
-  },
-  async creer(utilisateurId, nom, config) {
-    const [row] = await db
-      .insert(vuesSauvegardees)
-      .values({ utilisateurId, nom, config: { ...config, filtre: versJson(config.filtre) } })
-      .returning({ id: vuesSauvegardees.id });
-    return row.id;
-  },
-  async supprimer(utilisateurId, id) {
-    await db.delete(vuesSauvegardees).where(and(eq(vuesSauvegardees.utilisateurId, utilisateurId), eq(vuesSauvegardees.id, id)));
-  },
-};
 
 export const presencesDrizzle: PresencesRepository = {
   async signaler(utilisateurId, ressource, at) {

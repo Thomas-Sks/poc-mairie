@@ -7,17 +7,19 @@ import type { ReactNode } from "react";
 import { Bot, ChevronRight, Lock, Users } from "lucide-react";
 import { formaterDate, formaterDateHeure, prochainAnniversaire, aujourdhui } from "@/shared/domain/dates";
 import {
+  CAISSE_RETRAITE_LIBELLES,
   CATEGORIE_LIBELLES,
   DEPLACEMENT_LIBELLES,
   MODE_DE_VIE_LIBELLES,
+  ORIGINE_INSCRIPTION_LIBELLES,
   PREFERENCE_CONTACT_LIBELLES,
   PROTECTION_LIBELLES,
   SEXE_LIBELLES,
   STATUT_CIBLE_LIBELLES,
   TYPE_LOGEMENT_LIBELLES,
 } from "@/shared/domain/vocabulaire";
-import { Pastille, PastillePriorite, Proprietes, Section, Surface } from "@/shared/ui/elements";
-import { libelleAdresse, nomComplet } from "../domain/fiche";
+import { Pastille, Proprietes, Section, Surface } from "@/shared/ui/elements";
+import { nomComplet } from "../domain/fiche";
 import { casDUsage } from "../infrastructure";
 import { chargerFiche } from "./cadre-fiche";
 import { InterrupteurIa } from "./interrupteur-ia";
@@ -79,7 +81,6 @@ export async function OngletInfos({ id }: { id: string }) {
         <Bloc titre="Logement">
           <Renseignees
             items={[
-              { libelle: "Adresse", valeur: `${libelleAdresse(f)}, ${f.codePostal} ${f.ville}` },
               {
                 libelle: "Complément",
                 valeur:
@@ -121,6 +122,16 @@ export async function OngletInfos({ id }: { id: string }) {
           />
         </Bloc>
 
+        <Bloc titre="Aides et droits">
+          <Renseignees
+            items={[
+              { libelle: "Caisse de retraite", valeur: b.caisseRetraite && CAISSE_RETRAITE_LIBELLES[b.caisseRetraite] },
+              { libelle: "Aide de la caisse de retraite", valeur: b.aideCaisseRetraite ? "Oui" : "Non" },
+              { libelle: "Origine de l'inscription", valeur: ORIGINE_INSCRIPTION_LIBELLES[b.origineInscription] },
+            ]}
+          />
+        </Bloc>
+
         {s ? (
           <Bloc titre="Autonomie et santé">
             <Renseignees
@@ -151,7 +162,7 @@ export async function OngletInfos({ id }: { id: string }) {
         <Bloc titre="Habitudes">
           <Renseignees
             items={[
-              { libelle: "Habitudes", valeur: b.habitudes },
+              { libelle: "Au quotidien", valeur: b.habitudes },
               { libelle: "Centres d'intérêt", valeur: b.centresInteret },
               {
                 libelle: "Étiquettes",
@@ -206,11 +217,8 @@ export async function OngletInfos({ id }: { id: string }) {
           )}
         </Bloc>
 
-        <Bloc titre="Score de priorité">
-          <div className="flex items-center gap-3">
-            <PastillePriorite niveau={synthese.niveau} score={fiche.score} />
-            {fiche.niveauForce && <span className="text-sm text-muted-foreground">calculé : {fiche.niveauPriorite}</span>}
-          </div>
+        <Bloc titre="Pourquoi cette priorité">
+          {fiche.niveauForce && <p className="text-sm text-muted-foreground">Niveau calculé : {fiche.niveauPriorite}</p>}
           {fiche.niveauForce && fiche.niveauForceJustification && <p className="text-sm">Forcé : « {fiche.niveauForceJustification} »</p>}
           {criteres.length ? (
             <ul className="divide-y">
@@ -232,7 +240,6 @@ export async function OngletInfos({ id }: { id: string }) {
             items={[
               { libelle: "Prochain anniversaire", valeur: `${formaterDate(anniversaire.date)} (${anniversaire.age} ans)` },
               { libelle: "Inscription", valeur: formaterDate(fiche.dateInscription) },
-              { libelle: "Dernière vérification", valeur: fiche.dateDerniereVerification && formaterDate(fiche.dateDerniereVerification) },
             ]}
           />
         </Bloc>

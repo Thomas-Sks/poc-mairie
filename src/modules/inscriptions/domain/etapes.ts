@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { normaliserDate, normaliserTelephone } from "@/shared/domain/normalisation";
 import type {
+  CaisseRetraite,
   Categorie,
   Deplacement,
   ModeDeVie,
@@ -22,6 +23,7 @@ import {
   personneSchema,
   regleTiers,
   TYPES_INTERVENANT_FORMULAIRE,
+  type AideFormulaire,
   type FormulaireInscription,
 } from "./formulaire";
 
@@ -88,6 +90,8 @@ export type Saisie = {
   adresse: AdresseSaisie;
   modeDeVie: "" | ModeDeVie;
   categorie: "" | Categorie;
+  aides: AideFormulaire[];
+  caisseRetraite: "" | CaisseRetraite;
   servicesADomicile: boolean | null;
   intervenants: IntervenantSaisie[];
   contactsUrgence: ContactSaisie[];
@@ -148,6 +152,8 @@ export const saisieVide = (): Saisie => ({
   },
   modeDeVie: "",
   categorie: "",
+  aides: [],
+  caisseRetraite: "",
   servicesADomicile: null,
   intervenants: [],
   contactsUrgence: [contactVide()],
@@ -213,6 +219,8 @@ export function saisieVersReponses(s: Saisie) {
     },
     modeDeVie: choix(s.modeDeVie),
     categorie: choix(s.categorie),
+    aides: [...s.aides],
+    caisseRetraite: choix(s.caisseRetraite),
     servicesADomicile: oui(s.servicesADomicile),
     intervenants:
       s.servicesADomicile === false
@@ -272,6 +280,8 @@ export const ETAPES: readonly { titre: string; schema: z.ZodType }[] = [
     schema: z.object({
       modeDeVie: champsFormulaire.shape.modeDeVie,
       categorie: champsFormulaire.shape.categorie,
+      aides: champsFormulaire.shape.aides,
+      caisseRetraite: champsFormulaire.shape.caisseRetraite,
       personnes: z.array(situationPersonne),
     }),
   },

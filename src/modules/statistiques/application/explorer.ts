@@ -5,7 +5,7 @@ import { estSujetPersonne } from "../domain/catalogue";
 import type { DefinitionRequete, Referentiels } from "../domain/requete";
 import { construireResultat } from "../domain/resultat";
 import { appliquerSecret, secretApplicable, type ResultatAffiche } from "../domain/secret";
-import type { MoteurStatistiques, PersonneTrouvee, RequeteRepository } from "./ports";
+import type { MoteurStatistiques, PersonneTrouvee } from "./ports";
 
 type DepsMoteur = { moteur: MoteurStatistiques };
 
@@ -33,11 +33,11 @@ export async function executerRequete(
 export async function listerPersonnes(
   deps: DepsMoteur,
   ctx: Contexte,
-  definition: DefinitionRequete,
+  entree: { definition: DefinitionRequete; limite: number },
 ): Promise<{ total: number; personnes: PersonneTrouvee[] }> {
   exiger(ctx.utilisateur.role, "statistiques.nominatif");
-  if (!estSujetPersonne(definition.sujet)) throw new AccesRefuse("statistiques.nominatif");
-  return deps.moteur.personnes(ctx.commune.id, definition, aujourdhui(ctx.maintenant), 200);
+  if (!estSujetPersonne(entree.definition.sujet)) throw new AccesRefuse("statistiques.nominatif");
+  return deps.moteur.personnes(ctx.commune.id, entree.definition, aujourdhui(ctx.maintenant), entree.limite);
 }
 
 export async function obtenirReferentiels(deps: DepsMoteur, ctx: Contexte) {
@@ -48,28 +48,4 @@ export async function obtenirReferentiels(deps: DepsMoteur, ctx: Contexte) {
 export async function obtenirQuartiers(deps: DepsMoteur, ctx: Contexte) {
   exiger(ctx.utilisateur.role, "statistiques.lire");
   return deps.moteur.quartiers(ctx.commune.id);
-}
-
-// ─── Requêtes enregistrées ────────────────────────────────────────────────────
-
-type DepsRequetes = { requetes: RequeteRepository };
-
-export async function listerRequetes(deps: DepsRequetes, ctx: Contexte) {
-  exiger(ctx.utilisateur.role, "statistiques.lire");
-  return deps.requetes.lister(ctx.commune.id);
-}
-
-export async function obtenirRequete(deps: DepsRequetes, ctx: Contexte, id: string) {
-  exiger(ctx.utilisateur.role, "statistiques.lire");
-  return deps.requetes.obtenir(ctx.commune.id, id);
-}
-
-export async function enregistrerRequete(deps: DepsRequetes, ctx: Contexte, entree: { nom: string; definition: DefinitionRequete }) {
-  exiger(ctx.utilisateur.role, "statistiques.lire");
-  return deps.requetes.creer(ctx.commune.id, ctx.utilisateur.id, entree.nom, entree.definition);
-}
-
-export async function supprimerRequete(deps: DepsRequetes, ctx: Contexte, id: string) {
-  exiger(ctx.utilisateur.role, "statistiques.lire");
-  await deps.requetes.supprimer(ctx.commune.id, id);
 }

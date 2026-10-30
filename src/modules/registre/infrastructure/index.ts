@@ -14,14 +14,13 @@ import * as groupees from "../application/actions-groupees";
 import * as appel from "../application/appel-rapide";
 import * as listes from "../application/listes";
 import * as vuesPresence from "../application/vues-presence";
-import { actionsDrizzle, listesDrizzle, presencesDrizzle, referentielsDrizzle, registreDrizzle, vuesDrizzle } from "./depots-drizzle";
+import { actionsDrizzle, listesDrizzle, presencesDrizzle, referentielsDrizzle, registreDrizzle } from "./depots-drizzle";
 
 const deps = {
   registre: registreDrizzle,
   referentiels: referentielsDrizzle,
   actions: actionsDrizzle,
   listes: listesDrizzle,
-  vues: vuesDrizzle,
   presences: presencesDrizzle,
 };
 
@@ -54,8 +53,5 @@ export const casDUsage = {
   creerListe: (ctx: Contexte, e: Entree<typeof listes.creerListe>) => listes.creerListe(deps, ctx, e),
   renommerListe: (ctx: Contexte, e: Entree<typeof listes.renommerListe>) => listes.renommerListe(deps, ctx, e),
   supprimerListe: (ctx: Contexte, id: string) => listes.supprimerListe(deps, ctx, id),
-  listerVues: (ctx: Contexte) => vuesPresence.listerVues(deps, ctx),
-  enregistrerVue: (ctx: Contexte, e: Entree<typeof vuesPresence.enregistrerVue>) => vuesPresence.enregistrerVue(deps, ctx, e),
-  supprimerVue: (ctx: Contexte, id: string) => vuesPresence.supprimerVue(deps, ctx, id),
   signalerPresence: (ctx: Contexte, ressource: string) => vuesPresence.signalerPresence(deps, ctx, ressource),
 };

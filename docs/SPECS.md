@@ -7,6 +7,14 @@
 > Convention : chaque exigence a un identifiant stable (`E3-US2`, `RG-04`…) pour pouvoir être découpée ensuite en to-do list / tickets.
 > Priorités MoSCoW : **M** = Must (MVP), **S** = Should (V1), **C** = Could (V2+), **W** = Won't (hors périmètre pour l'instant).
 
+> **Révision 0.3 — 2026-10-29 (retours client, simplification).** Les utilisateurs ont environ 60 ans : prise en main en 2-3 minutes, peu de boutons.
+> - **E12 remplacé par l'assistant** : une seule zone de question (accueil et menu « Assistant ») donne un chiffre, une liste téléchargeable en Excel ou une fiche. Réponses déterministes : l'IA ne fait que choisir un outil (function calling) ; une question déjà posée rejoue la même interprétation ; le texte affiché vient de gabarits. L'explorateur, les requêtes enregistrées et les tableaux de bord sont retirés.
+> - **E15 (import Excel) retiré** du produit : l'import sera fait par l'équipe projet.
+> - **E1-US5 (revérification annuelle des fiches) retiré** : plus de « fiches à revérifier ».
+> - **Paramètres** : seuls restent les critères de priorité (RG-01), l'équipe et la démo. Relances (RG-04) et textes RGPD prennent des valeurs fixes.
+> - **Décret n° 2026-590 du 3 juillet 2026** : le Département (APA à domicile, PCH) et les caisses de retraite transmettent chaque année leurs bénéficiaires, inscrits sauf opposition ; le registre sert toute l'année. Ajouts : caisse de retraite, aide de la caisse, origine de l'inscription ; RG-01 compte l'APA (selon le GIR), la PCH et l'aide de la caisse.
+> - **Bénévoles** : écran dédié pour ajouter un bénévole et lui confier des personnes ; pendant une alerte elles arrivent dans sa liste. Il voit les notes écrites pendant l'alerte (« fiche canicule » partagée), jamais l'historique de l'année.
+
 ---
 
 ## 0. Vision

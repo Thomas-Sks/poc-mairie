@@ -148,23 +148,9 @@ export function lireRequeteTableau(donnee: unknown): RequeteTableau {
   return { ...r, filtre: normaliserFiltre(r.filtre as Filtre) };
 }
 
-// ─── Vues sauvegardées (E8-US10) ──────────────────────────────────────────────
+// ─── Configuration initiale du tableau ────────────────────────────────────────
 
 export type ConfigVue = { colonnes: Colonne[]; filtre: Filtre; tri: Tri[] };
-
-export const schemaConfigVue = z.object({
-  colonnes: z
-    .array(z.enum(COLONNES))
-    .min(1)
-    .transform((c) => [...new Set(c)]),
-  filtre: schemaFiltre.default(FILTRE_VIDE),
-  tri: schemaTri.default(TRI_PAR_DEFAUT),
-});
-
-export function lireConfigVue(donnee: unknown): ConfigVue {
-  const r = schemaConfigVue.parse(donnee);
-  return { colonnes: r.colonnes, tri: r.tri, filtre: normaliserFiltre(r.filtre as Filtre) };
-}
 
 // ─── Ordre de priorité & répartition (E8-US6, RG-02) ──────────────────────────
 

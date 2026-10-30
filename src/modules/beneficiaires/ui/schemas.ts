@@ -3,6 +3,8 @@
  */
 import { z } from "zod";
 import {
+  CAISSES_RETRAITE,
+  ORIGINES_INSCRIPTION,
   BESOINS,
   CATEGORIES,
   CIVILITES,
@@ -113,6 +115,10 @@ export const ficheSchema = z.object({
   protection: z.enum(PROTECTIONS),
   mandataireStructure: texteOpt,
   mandataireTelephone: telephoneOpt,
+  // Aides et droits (décret n° 2026-590)
+  caisseRetraite: enumOpt(CAISSES_RETRAITE),
+  aideCaisseRetraite: booleen,
+  origineInscription: z.enum(ORIGINES_INSCRIPTION),
   // Santé
   gir: entierOpt(1, 6, "GIR entre 1 et 6"),
   deplacement: enumOpt(DEPLACEMENTS),
@@ -160,6 +166,9 @@ export function versSaisieFiche(d: z.infer<typeof ficheSchema>, avecSante: boole
       protection: d.protection,
       mandataireStructure: d.protection === "non" ? null : d.mandataireStructure,
       mandataireTelephone: d.protection === "non" ? null : d.mandataireTelephone,
+      caisseRetraite: d.caisseRetraite,
+      aideCaisseRetraite: d.aideCaisseRetraite,
+      origineInscription: d.origineInscription,
       habitudes: d.habitudes,
       centresInteret: d.centresInteret,
       tags: d.tags,

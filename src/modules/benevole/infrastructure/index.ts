@@ -6,7 +6,9 @@ import { utilisateurs } from "@/shared/infrastructure/db/schema";
 import * as appel from "../application/appel";
 import { consulterMaListe, trouverPersonneSuivante } from "../application/consulter-ma-liste";
 import { accepterEngagement, rendreMaListe } from "../application/engagement-et-liste";
+import * as gestion from "../application/gestion";
 import type { Engagements } from "../application/ports";
+import { gestionBenevolesDrizzle } from "./gestion-drizzle";
 import { journalAppelsDrizzle } from "./journal-appels-drizzle";
 import { lectureBenevoleDrizzle } from "./lecture-drizzle";
 
@@ -36,6 +38,19 @@ export const casDUsageBenevole = {
   creerDemande: (ctx: Contexte, e: appel.EntreeDemande) => appel.creerDemande(deps, ctx, e),
   accepterEngagement: (ctx: Contexte) => accepterEngagement(deps, ctx),
   rendreMaListe: (ctx: Contexte) => rendreMaListe(deps, ctx),
+};
+
+const depsGestion = { gestion: gestionBenevolesDrizzle };
+type Entree<F extends (...args: never[]) => unknown> = Parameters<F>[2];
+
+/** Côté CCAS : ajouter des bénévoles et leur confier des personnes. */
+export const casDUsageGestionBenevoles = {
+  listerBenevoles: (ctx: Contexte) => gestion.listerBenevoles(depsGestion, ctx),
+  consulterBenevole: (ctx: Contexte, id: string) => gestion.consulterBenevole(depsGestion, ctx, id),
+  ajouterBenevole: (ctx: Contexte, e: Entree<typeof gestion.ajouterBenevole>) => gestion.ajouterBenevole(depsGestion, ctx, e),
+  rechercherPersonnes: (ctx: Contexte, e: Entree<typeof gestion.rechercherPersonnes>) => gestion.rechercherPersonnes(depsGestion, ctx, e),
+  confierPersonnes: (ctx: Contexte, e: Entree<typeof gestion.confierPersonnes>) => gestion.confierPersonnes(depsGestion, ctx, e),
+  retirerPersonne: (ctx: Contexte, e: Entree<typeof gestion.retirerPersonne>) => gestion.retirerPersonne(depsGestion, ctx, e),
 };
 
 /** Sélecteur d'utilisateur du POC (indispensable pour la démo), affiché dans l'en-tête bénévole. */

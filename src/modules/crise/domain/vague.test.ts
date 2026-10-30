@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { genererVague, vagueDueLe, type BeneficiaireVague } from "./vague";
+import { appelantInitial, appelantsHabituels, genererVague, vagueDueLe, type BeneficiaireVague } from "./vague";
 
 const JOUR = "2026-10-28"; // mercredi (3)
 
@@ -135,5 +135,25 @@ describe("vagueDueLe", () => {
 
   it("jamais pour une campagne clôturée", () => {
     expect(vagueDueLe({ ...campagne, statut: "cloturee" }, "2026-10-28")).toBe(false);
+  });
+});
+
+describe("appelant habituel (personnes confiées à un bénévole)", () => {
+  const habituels = appelantsHabituels([
+    { beneficiaireId: "a", benevoleId: "lucie", confieeLe: new Date("2026-10-02") },
+    { beneficiaireId: "a", benevoleId: "marc", confieeLe: new Date("2026-10-01") },
+    { beneficiaireId: "b", benevoleId: "lucie", confieeLe: new Date("2026-10-03") },
+  ]);
+
+  it("garde le premier bénévole à qui la personne a été confiée", () => {
+    expect(habituels.get("a")).toBe("marc");
+    expect(habituels.get("b")).toBe("lucie");
+  });
+
+  it("n'assigne que les cibles appelées par un humain et non exclues", () => {
+    expect(appelantInitial({ beneficiaireId: "a", canal: "humain", exclue: false }, habituels)).toBe("marc");
+    expect(appelantInitial({ beneficiaireId: "a", canal: "humain", exclue: true }, habituels)).toBeNull();
+    expect(appelantInitial({ beneficiaireId: "b", canal: "ia", exclue: false }, habituels)).toBeNull();
+    expect(appelantInitial({ beneficiaireId: "c", canal: "humain", exclue: false }, habituels)).toBeNull();
   });
 });

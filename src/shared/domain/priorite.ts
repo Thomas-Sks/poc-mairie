@@ -17,6 +17,12 @@ export type GrilleScore = {
   aucunePriseEnCharge: number;
   retourHospitalisation: number;
   pasDeTelephone: number;
+  /** Décret n° 2026-590 : APA selon le GIR (GIR inconnu = GIR 5-6), PCH, aide de la caisse de retraite. */
+  apaGir12: number;
+  apaGir34: number;
+  apaGir56: number;
+  pch: number;
+  aideCaisseRetraite: number;
   seuilP1: number;
   seuilP2: number;
 };
@@ -34,9 +40,19 @@ export const GRILLE_PAR_DEFAUT: GrilleScore = {
   aucunePriseEnCharge: 10,
   retourHospitalisation: 10,
   pasDeTelephone: 10,
+  apaGir12: 15,
+  apaGir34: 10,
+  apaGir56: 5,
+  pch: 10,
+  aideCaisseRetraite: 5,
   seuilP1: 60,
   seuilP2: 30,
 };
+
+/** Complète une grille enregistrée avant l'ajout de nouveaux critères. */
+export function completerGrille(g: Partial<GrilleScore> | null | undefined): GrilleScore {
+  return { ...GRILLE_PAR_DEFAUT, ...g, deplacement: { ...GRILLE_PAR_DEFAUT.deplacement, ...g?.deplacement } };
+}
 
 /** Faits utiles au calcul, extraits de la fiche, du foyer, du cercle et des prises en charge. */
 export type FaitsPriorite = {
@@ -53,6 +69,10 @@ export type FaitsPriorite = {
   nbPrisesEnChargeADomicile: number;
   retourHospitalisationRecent: boolean;
   pasDeTelephone: boolean;
+  /** null : pas d'APA ; sinon le GIR connu (ou null s'il n'est pas renseigné). */
+  apa: { gir: number | null } | null;
+  pch: boolean;
+  aideCaisseRetraite: boolean;
 };
 
 export type CritereApplique = { critere: string; points: number };
@@ -102,6 +122,15 @@ export function calculerScore(
   if (faits.nbPrisesEnChargeADomicile === 0) ajouter("Aucune aide à domicile", grille.aucunePriseEnCharge);
   if (faits.retourHospitalisationRecent) ajouter("Retour d'hospitalisation récent", grille.retourHospitalisation);
   if (faits.pasDeTelephone) ajouter("Pas de téléphone (visite nécessaire)", grille.pasDeTelephone);
+
+  if (faits.apa) {
+    const gir = faits.apa.gir;
+    if (gir !== null && gir <= 2) ajouter("APA, GIR 1 ou 2", grille.apaGir12);
+    else if (gir !== null && gir <= 4) ajouter("APA, GIR 3 ou 4", grille.apaGir34);
+    else ajouter("APA, GIR 5-6 ou non précisé", grille.apaGir56);
+  }
+  if (faits.pch) ajouter("PCH (handicap)", grille.pch);
+  if (faits.aideCaisseRetraite) ajouter("Aide de la caisse de retraite", grille.aideCaisseRetraite);
 
   const score = Math.min(100, criteres.reduce((total, c) => total + c.points, 0));
   return { score, niveau: niveauDepuisScore(score, grille), criteres };

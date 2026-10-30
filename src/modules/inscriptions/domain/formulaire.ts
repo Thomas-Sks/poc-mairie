@@ -5,6 +5,7 @@
  */
 import { z } from "zod";
 import {
+  CAISSES_RETRAITE,
   CATEGORIES,
   DEPLACEMENTS,
   MODES_DE_VIE,
@@ -13,6 +14,15 @@ import {
   TYPES_INDISPONIBILITE,
   TYPES_PRISE_EN_CHARGE,
 } from "@/shared/domain/vocabulaire";
+
+/** Aides proposées à l'étape « Situation » (décret n° 2026-590). */
+export const AIDES_FORMULAIRE = ["apa", "pch", "aide_caisse"] as const;
+export type AideFormulaire = (typeof AIDES_FORMULAIRE)[number];
+export const AIDE_FORMULAIRE_LIBELLES: Record<AideFormulaire, string> = {
+  apa: "L'APA (allocation personnalisée d'autonomie)",
+  pch: "La PCH (prestation de compensation du handicap)",
+  aide_caisse: "Une aide de sa caisse de retraite (aide à domicile, adaptation du logement…)",
+};
 
 const telephone = z
   .string("Indiquez le numéro de téléphone")
@@ -112,6 +122,9 @@ export const champsFormulaire = z.object({
   // 4. Situation personnelle (foyer)
   modeDeVie: z.enum(MODES_DE_VIE, "Indiquez avec qui vit la personne"),
   categorie: z.enum(CATEGORIES, "Indiquez la situation de la personne"),
+  /** Décret n° 2026-590 : aides perçues (facultatif) et caisse de retraite. */
+  aides: z.array(z.enum(AIDES_FORMULAIRE)).default([]),
+  caisseRetraite: z.enum(CAISSES_RETRAITE).optional(),
   // 5. Intervenants à domicile
   servicesADomicile: z.boolean().optional(),
   intervenants: z.array(intervenantSchema).default([]),

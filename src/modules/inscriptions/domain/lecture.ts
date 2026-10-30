@@ -4,7 +4,9 @@
  */
 import { formaterDate } from "@/shared/domain/dates";
 import { formaterNom, formaterPrenom } from "@/shared/domain/normalisation";
+import { AIDE_FORMULAIRE_LIBELLES } from "./formulaire";
 import {
+  CAISSE_RETRAITE_LIBELLES,
   CATEGORIE_LIBELLES,
   DEPLACEMENT_LIBELLES,
   INDISPONIBILITE_LIBELLES,
@@ -82,6 +84,11 @@ export function lireReponses(reponses: Brut): SectionLue[] {
     elements: [
       { libelle: "Mode de vie", valeur: libelle(MODE_DE_VIE_LIBELLES, reponses.modeDeVie) },
       { libelle: "Catégorie", valeur: libelle(CATEGORIE_LIBELLES, reponses.categorie) },
+      {
+        libelle: "Aides",
+        valeur: (Array.isArray(reponses.aides) ? reponses.aides : []).map((a) => libelle(AIDE_FORMULAIRE_LIBELLES, a)).filter(Boolean).join(", ") || "Aucune indiquée",
+      },
+      { libelle: "Caisse de retraite", valeur: libelle(CAISSE_RETRAITE_LIBELLES, reponses.caisseRetraite) || "Non indiquée" },
     ],
   });
 

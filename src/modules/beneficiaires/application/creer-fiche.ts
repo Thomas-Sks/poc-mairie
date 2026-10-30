@@ -81,6 +81,8 @@ export async function creerFiche(
         troublesCognitifs: sante.troublesCognitifs,
         pasDeTelephone: b.pasDeTelephone,
         retourHospitalisationLe: null,
+        gir: sante.gir,
+        aideCaisseRetraite: b.aideCaisseRetraite,
       },
       foyer: { sousLesToits: foyer.sousLesToits, pieceFraiche: foyer.pieceFraiche, etage: foyer.etage, typeLogement: foyer.typeLogement },
       cercle: [],
