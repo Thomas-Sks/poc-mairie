@@ -10,6 +10,7 @@ export const NAVIGATION: EntreeNavigation[] = [
   { href: "/benevoles", libelle: "Bénévoles", roles: ["admin", "agent"] },
   { href: "/inscriptions", libelle: "Inscriptions", roles: ["admin"] },
   { href: "/parametres", libelle: "Paramètres", roles: ["admin"] },
+  { href: "/test-vocal", libelle: "Test Vocal AI", roles: ["admin", "agent"] },
 ];
 
 export const navigationPour = (role: Role) => NAVIGATION.filter((e) => e.roles.includes(role));

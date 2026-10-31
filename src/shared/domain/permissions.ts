@@ -19,6 +19,7 @@ export const PERMISSIONS = [
   "parametres.gerer",
   "demo.reinitialiser",
   "appel.benevole",
+  "vocal.tester", // POC : conversation de test avec l'agent vocal IA
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -35,6 +36,7 @@ const MATRICE: Record<Role, readonly Permission[]> = {
     "statistiques.nominatif",
     // Télécharger les listes du registre (CSV).
     "export",
+    "vocal.tester",
   ],
   benevole: ["appel.benevole"],
 };
