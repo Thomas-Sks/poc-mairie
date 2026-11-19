@@ -2,7 +2,7 @@
  * Cadre commun des pages de fiche : en-tête, informations prioritaires (E5-US4), synthèse (E1-US2), onglets.
  */
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { cache, type ReactNode } from "react";
 import { Info, MapPinOff } from "lucide-react";
 import { z } from "zod";
 import { contexteAvec } from "@/shared/infrastructure/session";
@@ -32,14 +32,17 @@ const FORMAT_LOCAL = new Intl.DateTimeFormat("sv-SE", {
   minute: "2-digit",
 });
 
-/** Charge la fiche ou renvoie une 404 (identifiant invalide, autre commune, inexistante). */
-export async function chargerFiche(id: string) {
+/**
+ * Charge la fiche ou renvoie une 404 (identifiant invalide, autre commune, inexistante).
+ * Mise en cache le temps d'une requête : le cadre (layout) et l'onglet (page) la partagent.
+ */
+export const chargerFiche = cache(async (id: string) => {
   if (!z.uuid().safeParse(id).success) notFound();
   const ctx = await contexteAvec("fiches.lire");
   const consultation = await casDUsage.consulterFiche(ctx, { id });
   if (!consultation) notFound();
   return { ctx, ...consultation };
-}
+});
 
 function ElementSynthese({ libelle, children }: { libelle: string; children: ReactNode }) {
   return (

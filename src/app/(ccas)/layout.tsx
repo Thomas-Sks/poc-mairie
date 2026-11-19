@@ -15,20 +15,21 @@ export default async function LayoutCcas({ children }: LayoutProps<"/">) {
   const ctx = await obtenirContexte();
   if (ctx.utilisateur.role === "benevole") redirect("/benevole");
 
-  const equipe = await db
-    .select({ id: utilisateurs.id, prenom: utilisateurs.prenom, nom: utilisateurs.nom, role: utilisateurs.role })
-    .from(utilisateurs)
-    .where(eq(utilisateurs.communeId, ctx.commune.id))
-    .orderBy(asc(utilisateurs.createdAt));
-
   const entrees = navigationPour(ctx.utilisateur.role);
-  // Pastille rouge sur « Inscriptions » : nouvelles demandes à valider.
-  const [{ n: aValider }] = peut(ctx.utilisateur.role, "inscriptions.valider")
-    ? await db
-        .select({ n: count() })
-        .from(inscriptions)
-        .where(and(eq(inscriptions.communeId, ctx.commune.id), eq(inscriptions.statut, "en_attente")))
-    : [{ n: 0 }];
+  // Pastille rouge sur « Inscriptions » : nouvelles demandes à valider. Les deux requêtes partent en parallèle.
+  const [equipe, [{ n: aValider }]] = await Promise.all([
+    db
+      .select({ id: utilisateurs.id, prenom: utilisateurs.prenom, nom: utilisateurs.nom, role: utilisateurs.role })
+      .from(utilisateurs)
+      .where(eq(utilisateurs.communeId, ctx.commune.id))
+      .orderBy(asc(utilisateurs.createdAt)),
+    peut(ctx.utilisateur.role, "inscriptions.valider")
+      ? db
+          .select({ n: count() })
+          .from(inscriptions)
+          .where(and(eq(inscriptions.communeId, ctx.commune.id), eq(inscriptions.statut, "en_attente")))
+      : Promise.resolve([{ n: 0 }]),
+  ]);
   const pastilles = { "/inscriptions": aValider };
 
   return (
